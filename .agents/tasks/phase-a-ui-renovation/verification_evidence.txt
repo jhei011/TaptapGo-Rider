@@ -1,0 +1,74 @@
+Phase A – Cross-FEAT Integration Verification Evidence
+=======================================================
+Iteration: 1
+Timestamp: 2026-10-24T03:37:42+08:00
+Worktree: c:\Users\emjhe\Flutter Projects\Bilis Hatid Express Inc
+
+────────────────────────────────────────────────────────────────────────────────
+COMMAND 1: flutter analyze lib
+────────────────────────────────────────────────────────────────────────────────
+Command:   flutter analyze lib
+Directory: c:\Users\emjhe\Flutter Projects\Bilis Hatid Express Inc
+Timestamp: 2026-10-24T03:37:42+08:00
+
+Output:
+  Analyzing lib...
+  No issues found! (ran in 4.4s)
+
+Result: PASS — 0 issues found.
+
+────────────────────────────────────────────────────────────────────────────────
+COMMAND 2: flutter test
+────────────────────────────────────────────────────────────────────────────────
+Command:   flutter test
+Directory: c:\Users\emjhe\Flutter Projects\Bilis Hatid Express Inc
+Timestamp: 2026-10-24T03:37:42+08:00
+
+Output:
+  00:08 +10: All tests passed!
+
+  Tests run (10 total):
+    scan_code_parser_test.dart (8 tests)
+      ✓ ScanCodeParser valid numeric string returns integer
+      ✓ ScanCodeParser numeric string with surrounding whitespace returns integer
+      ✓ ScanCodeParser single zero is valid and returns 0
+      ✓ ScanCodeParser BH- prefixed code returns null
+      ✓ ScanCodeParser numeric string with alpha suffix returns null
+      ✓ ScanCodeParser phone-like number with leading + returns null
+      ✓ ScanCodeParser empty string returns null
+      ✓ ScanCodeParser whitespace-only string returns null
+    test/widget_test.dart (1 test)
+      ✓ App smoke test
+    widget_test.dart (1 test)
+      ✓ App smoke test
+
+Result: PASS — 10/10 tests passed, 0 failures.
+
+────────────────────────────────────────────────────────────────────────────────
+COMMAND 3: flutter build apk --debug
+────────────────────────────────────────────────────────────────────────────────
+Command:   flutter build apk --debug
+Directory: c:\Users\emjhe\Flutter Projects\Bilis Hatid Express Inc
+Timestamp: 2026-10-24T03:37:42+08:00
+
+Output:
+  Running Gradle task 'assembleDebug'...
+  [JVM native-access warnings from Gradle — non-fatal, no build errors]
+  ✓ Built build\app\outputs\flutter-apk\app-debug.apk
+
+Result: PASS — APK built successfully at build\app\outputs\flutter-apk\app-debug.apk.
+  Note: JVM restricted-method warnings are from Gradle's bundled native library
+  loader and are unrelated to the Flutter/Dart code. They do not indicate a build
+  failure and are expected on this JVM version.
+
+────────────────────────────────────────────────────────────────────────────────
+SUMMARY
+────────────────────────────────────────────────────────────────────────────────
+All three verification commands passed with no seam errors between FEATs.
+
+  ✓ flutter analyze lib   — 0 issues
+  ✓ flutter test          — 10/10 passed
+  ✓ flutter build apk     — APK produced successfully
+
+No cross-FEAT import errors, missing exports, or widget constructor mismatches
+were found. Phase A code is integration-clean.
