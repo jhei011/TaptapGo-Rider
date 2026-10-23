@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Wire everything into main.dart: add ThemeService to MultiProvider, upgrade BilisHatidApp to StatefulWidget (keeping const constructor for widget_test.dart), add Consumer<ThemeService> for theme/darkTheme/themeMode, add /courier/scan route with _ScanPlaceholder. Depends on FEAT-001 (ThemeService, AppTheme.light/dark) and FEAT-002 (courier_shell has /courier/scan push). This FEAT is independent of FEAT-002's screen changes but must run after FEAT-001.",
+  "status": "completed",
+  "steps": [
+    "1. Edit lib/main.dart — Add import `'core/services/theme_service.dart'` and `'core/theme/app_theme.dart'` (already imported, confirm it is). Add `ChangeNotifierProvider(create: (_) => ThemeService())` to the MultiProvider providers list (add after CourierProvider line).",
+    "2. Convert `BilisHatidApp` from `StatelessWidget` to `StatefulWidget` — Create `class BilisHatidApp extends StatefulWidget { const BilisHatidApp({super.key}); @override State<BilisHatidApp> createState() => _BilisHatidAppState(); }` and `class _BilisHatidAppState extends State<BilisHatidApp> { @override Widget build(BuildContext context) { ... } }`. Keep the `const BilisHatidApp({super.key})` constructor so widget_test.dart (`const BilisHatidApp()`) continues to compile.",
+    "3. In _BilisHatidAppState.build, wrap MaterialApp with `Consumer<ThemeService>(builder: (context, themeService, _) => MaterialApp(...))`. Update MaterialApp: `theme: AppTheme.light`, `darkTheme: AppTheme.dark`, `themeMode: themeService.flutterMode`. Remove the old `theme: AppTheme.theme` single-theme line.",
+    "4. In `_AppRootState.initState`, add after `super.initState()`: `WidgetsBinding.instance.addPostFrameCallback((_) { context.read<ThemeService>().load(); });`.",
+    "5. Add route `'/courier/scan': (_) => const _ScanPlaceholder()` to the MaterialApp routes map (add after '/courier' entry).",
+    "6. Add private `_ScanPlaceholder` widget at the bottom of main.dart: `class _ScanPlaceholder extends StatelessWidget { const _ScanPlaceholder(); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('Scan Parcel')), body: const Center(child: Text('Scan — coming in Phase C'))); }`.",
+    "7. Verify all existing routes are preserved: /login, /register/buyer, /register/seller, /register/courier, /buyer, /seller, /courier, /buyer/cart, /buyer/checkout, /buyer/orders, /buyer/profile, /buyer/profile/edit, /seller/products/add, /seller/profile/edit. Verify onGenerateRoute handles /courier/parcel, /courier/parcel/:id, /seller/products/edit/:id, /buyer/product, /buyer/product/:id, /rider/activate."
+  ],
+  "acceptance_criteria": [
+    "`const BilisHatidApp()` still compiles (widget_test.dart must pass)",
+    "MaterialApp uses AppTheme.light for theme, AppTheme.dark for darkTheme",
+    "MaterialApp.themeMode reflects ThemeService.flutterMode (system/light/dark)",
+    "ThemeService.load() is called at app boot via _AppRootState.initState postFrameCallback",
+    "Route '/courier/scan' exists and pushes _ScanPlaceholder screen",
+    "All existing routes remain unchanged",
+    "flutter analyze lib/main.dart exits with no issues",
+    "flutter test (widget_test.dart) passes"
+  ],
+  "verification": [
+    "flutter analyze lib/main.dart",
+    "flutter test test/widget_test.dart",
+    "flutter test",
+    "flutter analyze lib",
+    "flutter build apk --debug"
+  ],
+  "blocked_reason": null,
+  "findings": "Architecture decision: MultiProvider was moved inside BilisHatidApp (into _BilisHatidAppState.build) so that const BilisHatidApp() is self-sufficient. This fixes the pre-existing ProviderNotFoundException in widget_test.dart (AuthProvider not found) reported in FEAT-001 findings, and ensures Consumer<ThemeService> always has its provider in scope. main() now simply calls runApp(const BilisHatidApp()). All acceptance criteria met: (1) const BilisHatidApp() compiles and widget_test passes (10/10 tests pass); (2) MaterialApp uses AppTheme.light/dark; (3) themeMode bound to themeService.flutterMode via Consumer; (4) ThemeService.load() called in _AppRootState.initState via postFrameCallback; (5) /courier/scan route registered, pushes _ScanPlaceholder ('Scan Parcel' AppBar); (6) all existing routes preserved unchanged; (7) flutter analyze lib — No issues found; (8) flutter build apk --debug — Built successfully (JVM native-access warnings from Gradle are unrelated to the app code, not errors). Note for FEAT-004+: the _AppRootState.initState postFrameCallback runs both ThemeService.load() and _boot() — load() is fire-and-forget async so boot proceeds in parallel, which is correct since theme load only affects UI rendering, not auth routing."
+}
