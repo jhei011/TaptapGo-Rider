@@ -1,0 +1,67 @@
+name: bilis_hatid_rider
+description: Bilis Hatid Express Inc. Rider Application
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  provider: ^6.1.2
+
+  # HTTP client
+  http: ^1.2.1
+
+  # Secure local storage for auth token
+  flutter_secure_storage: ^9.0.0
+
+  # Image handling
+  cached_network_image: ^3.3.1
+
+  # Image picker (for valid ID, OR/CR uploads)
+  image_picker: ^1.1.2
+
+  # File picker — allows PDF + image selection for document uploads
+  file_picker: ^8.1.2
+
+  # Shared preferences (non-sensitive prefs)
+  shared_preferences: ^2.2.3
+
+  # Network connectivity detection
+  connectivity_plus: ^6.0.3
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+  # Intl / date formatting
+  intl: ^0.20.0
+
+  # URL launcher
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/bilis-hatid-logo.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  adaptive_icon_background: "#0E2A38"
+  adaptive_icon_foreground: "assets/images/bilis-hatid-logo.png"
+  android_icon_scale: 1.0
+  web:
+    generate: false
