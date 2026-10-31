@@ -45,7 +45,7 @@ class _CourierShellState extends State<CourierShell> {
         cp.loadDashboard();
         break;
       case 1:
-        cp.loadOrders();
+        cp.loadJobs();
         break;
       case 2:
         cp.loadEarnings();

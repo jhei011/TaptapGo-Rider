@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bilis_hatid_rider/core/utils/scan_code_parser.dart';
+import 'package:taptap_go/core/utils/scan_code_parser.dart';
 
 void main() {
   group('ScanCodeParser', () {

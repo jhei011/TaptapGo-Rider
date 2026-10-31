@@ -1,0 +1,11 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    "HIGH — BhStatusChip uses only light-mode status token pairs. All six kDarkStatus*Bg/Fg tokens in app_tokens.dart are unused. Status chips will render low-contrast light pastel backgrounds on dark surfaces. Fix: pass Brightness to _resolve() and switch token sets on isDark.",
+    "MEDIUM — AppTheme.light and AppTheme.dark both declare fontFamily: 'Inter' in their TextTheme, but pubspec.yaml has no fonts: section. Flutter silently falls back to the OS system font. Either bundle the Inter font assets and declare them in pubspec, or remove the fontFamily references until the font is available.",
+    "MEDIUM — BhAppBar hardcodes kBorderSubtle (Color(0xFFF1F3F2), near-white) as the bottom border color in both light and dark themes. The separator is invisible in dark mode. Fix: use isDark ? kDarkBorderSubtle : kBorderSubtle.",
+    "LOW — _ScanPlaceholder uses a raw AppBar instead of BhAppBar. The 1px bottom border applied by BhAppBar via its own shape parameter is absent, creating a visual inconsistency on the scan route during dark-mode testing. Fix: replace AppBar with BhAppBar(title: 'Scan Parcel')."
+  ],
+  "reviewed_at": "2026-10-24T04:15:00+08:00",
+  "reviewDoc": ".agents/tasks/phase-a-ui-renovation/review.md"
+}

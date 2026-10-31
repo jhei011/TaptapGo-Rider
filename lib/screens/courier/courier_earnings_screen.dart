@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_tokens.dart';
-import '../../core/constants/app_constants.dart';
 import '../../providers/courier_provider.dart';
 import '../../widgets/bh_app_bar.dart';
 import '../../widgets/bh_skeleton.dart';
 import '../../widgets/bh_empty_state.dart';
 import '../../widgets/bh_offline_banner.dart';
+import 'rider_job_widgets.dart';
 
+/// Earnings, job history and COD to remit (Rider Modules R7).
 class CourierEarningsScreen extends StatefulWidget {
   const CourierEarningsScreen({super.key});
   @override
@@ -15,11 +17,63 @@ class CourierEarningsScreen extends StatefulWidget {
 }
 
 class _CourierEarningsState extends State<CourierEarningsScreen> {
+  DateTimeRange? _range;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => context.read<CourierProvider>().loadEarnings());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reload());
+  }
+
+  Future<void> _reload() =>
+      context.read<CourierProvider>().loadEarnings(from: _range?.start, to: _range?.end);
+
+  Future<void> _pickRange() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 1),
+      lastDate: now,
+      initialDateRange: _range ?? DateTimeRange(start: now.subtract(const Duration(days: 7)), end: now),
+    );
+    if (picked != null) {
+      setState(() => _range = picked);
+      await _reload();
+    }
+  }
+
+  Future<void> _remit(double balance) async {
+    final amount = TextEditingController(text: balance.toStringAsFixed(2));
+    final value = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remit COD'),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('COD balance: ${peso(balance)}', style: kBodySm.copyWith(color: kTextSecondary)),
+          const SizedBox(height: kSpace10),
+          TextField(
+            key: const Key('remitAmountField'),
+            controller: amount,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+            decoration: const InputDecoration(labelText: 'Amount handed to your logistics company', prefixText: '₱'),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, double.tryParse(amount.text)),
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
+    );
+    if (value == null || !mounted) return;
+    final cp = context.read<CourierProvider>();
+    final ok = await cp.remit(value);
+    if (mounted) {
+      showResult(context, ok, 'Remittance submitted. It stays Pending until your logistics company confirms it.', cp.error);
+    }
   }
 
   @override
@@ -34,227 +88,163 @@ class _CourierEarningsState extends State<CourierEarningsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: cp.loadEarnings,
+            tooltip: 'Refresh',
+            onPressed: _reload,
           ),
         ],
       ),
       body: BhOfflineBanner(
-        child: cp.loadingEarnings
+        child: cp.loadingEarnings && cp.earnings == null
             ? const Padding(
                 padding: EdgeInsets.all(kSpace16),
                 child: SkeletonList(count: 4),
               )
             : RefreshIndicator(
-                onRefresh: cp.loadEarnings,
+                onRefresh: _reload,
                 color: kBrand600,
                 child: cp.earnings == null
-                    ? const BhEmptyState(
-                        icon: Icons.account_balance_wallet_outlined,
-                        title: 'No earnings data',
-                        subtitle:
-                            'Complete deliveries to see your earnings here',
-                      )
-                    : _buildBody(cp.earnings!),
+                    ? ListView(children: const [
+                        BhEmptyState(
+                          icon: Icons.account_balance_wallet_outlined,
+                          title: 'No earnings data',
+                          subtitle: 'Complete pickups and deliveries to see your earnings here',
+                        ),
+                      ])
+                    : _buildBody(cp.earnings!, cp.cod),
               ),
       ),
     );
   }
 
-  Widget _buildBody(Map<String, dynamic> data) {
-    final total = (data['total_earnings'] as num?)?.toDouble() ?? 0.0;
-    final today = (data['today_earnings'] as num?)?.toDouble() ?? 0.0;
-    final week = (data['week_earnings'] as num?)?.toDouble() ?? 0.0;
-    final month = (data['month_earnings'] as num?)?.toDouble() ?? 0.0;
+  Widget _buildBody(Map<String, dynamic> data, Map<String, dynamic>? cod) {
+    double n(String k, [Map<String, dynamic>? m]) => ((m ?? data)[k] as num?)?.toDouble() ?? 0.0;
     final history = data['history'] as List? ?? [];
 
-    return SingleChildScrollView(
+    return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(kSpace16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Hero total card ───────────────────────────────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              color: kBrand800,
-              borderRadius: BorderRadius.circular(kRadiusLg),
-              boxShadow: const [
-                BoxShadow(
-                    color: Color(0x220E2A38),
-                    blurRadius: 12,
-                    offset: Offset(0, 4))
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Total Earnings',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.75))),
-                const SizedBox(height: 4),
-                Text('₱${total.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white)),
-                const SizedBox(height: kSpace16),
-                Row(children: [
-                  _heroPeriod('Today', '₱${today.toStringAsFixed(2)}'),
-                  const SizedBox(width: kSpace10),
-                  _heroPeriod('This Week', '₱${week.toStringAsFixed(2)}'),
-                  const SizedBox(width: kSpace10),
-                  _heroPeriod('This Month', '₱${month.toStringAsFixed(2)}'),
-                ]),
-              ],
-            ),
+      children: [
+        // ── Totals ────────────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.all(kSpace16),
+          decoration: BoxDecoration(color: kBrand800, borderRadius: BorderRadius.circular(kRadiusLg)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Total Earnings', style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12)),
+            Text(peso(n('total_earnings')),
+                style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800)),
+            const SizedBox(height: kSpace12),
+            Row(children: [
+              _total('Today', n('today_earnings')),
+              _total('This week', n('week_earnings')),
+              _total('This month', n('month_earnings')),
+            ]),
+            const SizedBox(height: kSpace8),
+            Text('₱30.00 per pickup · ₱50.00 per delivery · ₱0.00 per failed attempt',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 11)),
+          ]),
+        ),
+        const SizedBox(height: kSpace14),
+
+        // ── COD to remit ──────────────────────────────────────────────────
+        if (cod != null) _codCard(cod, n('balance', cod), n('pending_total', cod)),
+        const SizedBox(height: kSpace14),
+
+        // ── History ───────────────────────────────────────────────────────
+        Row(children: [
+          Expanded(child: Text('History', style: kHeadingSm.copyWith(color: kTextPrimary))),
+          TextButton.icon(
+            icon: const Icon(Icons.date_range, size: 16),
+            label: Text(_range == null
+                ? 'Last 30 days'
+                : '${formatTime(_range!.start.toIso8601String()).split(',').first} – ${formatTime(_range!.end.toIso8601String()).split(',').first}'),
+            onPressed: _pickRange,
           ),
-          const SizedBox(height: 18),
-
-          // ── Delivery history ──────────────────────────────────────────
-          Text('Delivery History',
-              style: kHeadingSm.copyWith(color: kTextPrimary)),
-          const SizedBox(height: kSpace10),
-
-          if (history.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(kSpace24),
-              decoration: BoxDecoration(
-                color: kSurfaceBase,
-                borderRadius: BorderRadius.circular(kRadiusLg),
-                border: Border.all(color: kBorderDefault),
-              ),
-              child: const Center(
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.receipt_long_outlined,
-                      size: 36, color: kTextMuted),
-                  SizedBox(height: kSpace8),
-                  Text('No delivery history yet',
-                      style: TextStyle(color: kTextMuted, fontSize: 13)),
-                ]),
-              ),
-            )
-          else
-            ...history.map<Widget>((item) {
-              final m = item as Map<String, dynamic>;
-              return _HistoryItem(data: m);
-            }),
-          const SizedBox(height: kSpace20),
-        ],
-      ),
+        ]),
+        const SizedBox(height: kSpace8),
+        if (history.isEmpty)
+          const BhEmptyState(
+            icon: Icons.receipt_long_outlined,
+            title: 'No jobs in this period',
+            subtitle: 'Finished pickups, deliveries and failed attempts appear here',
+          )
+        else
+          ...history.map((h) {
+            final row = (h as Map).cast<String, dynamic>();
+            return Container(
+              margin: const EdgeInsets.only(bottom: kSpace8),
+              padding: const EdgeInsets.all(kSpace12),
+              decoration: cardDecoration(),
+              child: Row(children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('${row['result']} · ${row['tracking_number']}',
+                        style: kLabelMd.copyWith(color: kTextPrimary)),
+                    Text(formatTime(row['date'] as String?), style: kBodySm.copyWith(color: kTextMuted)),
+                  ]),
+                ),
+                Text(peso((row['pay'] as num?) ?? 0), style: kHeadingSm.copyWith(color: kBrand700)),
+              ]),
+            );
+          }),
+      ],
     );
   }
 
-  Widget _heroPeriod(String label, String amount) => Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(kSpace10),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.75))),
-              const SizedBox(height: 2),
-              Text(amount,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white)),
-            ],
-          ),
-        ),
+  Widget _total(String label, double value) => Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11)),
+          Text(peso(value), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
+        ]),
       );
-}
 
-// ── History Item ──────────────────────────────────────────────────────────────
-class _HistoryItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const _HistoryItem({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    final orderId = data['order_id'] ?? data['id'] ?? '—';
-    final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
-    final status = data['status'] as String? ?? 'delivered';
-    final createdAt = data['created_at'] as String?;
-    final buyer = data['buyer_name'] as String?;
-
+  Widget _codCard(Map<String, dynamic> cod, double balance, double pending) {
+    final collected = cod['collected'] as List? ?? [];
+    final remittances = cod['remittances'] as List? ?? [];
     return Container(
-      margin: const EdgeInsets.only(bottom: kSpace8),
-      padding: const EdgeInsets.all(kSpace14),
-      decoration: BoxDecoration(
-        color: kSurfaceBase,
-        borderRadius: BorderRadius.circular(kRadiusLg),
-        border: Border.all(color: kBorderDefault),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x060E2A38), blurRadius: 4, offset: Offset(0, 2))
-        ],
-      ),
-      child: Row(children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-              color: kStatusDeliveredBg,
-              borderRadius: BorderRadius.circular(kSpace10)),
-          child: const Icon(Icons.check_circle_outline,
-              size: 20, color: kStatusDeliveredFg),
-        ),
-        const SizedBox(width: kSpace12),
-        Expanded(
-            child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Parcel #$orderId',
-                style: kHeadingSm.copyWith(color: kTextPrimary)),
-            if (buyer != null)
-              Text(buyer, style: kBodySm.copyWith(color: kTextSecondary)),
-            if (createdAt != null)
-              Text(_fmt(createdAt), style: kLabelSm.copyWith(color: kTextMuted)),
-          ],
-        )),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text('₱${amount.toStringAsFixed(2)}',
-                style: kHeadingSm.copyWith(color: kBrand700)),
-            const SizedBox(height: 3),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: kStatusDeliveredBg,
-                borderRadius: BorderRadius.circular(kSpace10),
-              ),
-              child: Text(
-                AppConstants.orderStatusLabel(status),
-                style: kLabelSm.copyWith(color: kStatusDeliveredFg),
-              ),
-            ),
-          ],
+      padding: const EdgeInsets.all(kSpace16),
+      decoration: cardDecoration(),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: Text('COD balance', style: kHeadingSm.copyWith(color: kTextPrimary))),
+          Text(peso(balance), style: kHeadingMd.copyWith(color: kBrand700)),
+        ]),
+        if (pending > 0)
+          Text('${peso(pending)} remitted, waiting for confirmation',
+              style: kBodySm.copyWith(color: kStatusPendingFg)),
+        const SizedBox(height: kSpace8),
+        for (final c in collected.take(10))
+          Builder(builder: (_) {
+            final row = (c as Map).cast<String, dynamic>();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: kSpace4),
+              child: Row(children: [
+                Expanded(child: Text('Order #${row['order_id']} · ${row['tracking_number']}',
+                    style: kBodySm.copyWith(color: kTextSecondary))),
+                Text(peso((row['amount'] as num?) ?? 0), style: kBodySm.copyWith(color: kTextPrimary)),
+              ]),
+            );
+          }),
+        for (final r in remittances.take(5))
+          Builder(builder: (_) {
+            final row = (r as Map).cast<String, dynamic>();
+            final short = (row['shortfall'] as num?) ?? 0;
+            return Text(
+              'Remitted ${peso((row['amount'] as num?) ?? 0)} · ${row['status'] == 'pending' ? 'Pending' : 'Confirmed'}'
+              '${short > 0 ? ' · ${peso(short)} short' : ''}',
+              style: kBodySm.copyWith(color: kTextMuted),
+            );
+          }),
+        const SizedBox(height: kSpace10),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.payments_outlined, size: 18),
+            label: const Text('Remit COD'),
+            onPressed: balance > 0 && pending == 0 ? () => _remit(balance) : null,
+            style: ElevatedButton.styleFrom(backgroundColor: kBrand600, foregroundColor: Colors.white, elevation: 0),
+          ),
         ),
       ]),
     );
-  }
-
-  String _fmt(String iso) {
-    try {
-      final d = DateTime.parse(iso).toLocal();
-      const m = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-      ];
-      return '${m[d.month - 1]} ${d.day}, ${d.year}';
-    } catch (_) {
-      return iso;
-    }
   }
 }

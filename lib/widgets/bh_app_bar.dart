@@ -40,8 +40,11 @@ class BhAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       automaticallyImplyLeading: false,
       titleTextStyle: titleStyle,
-      shape: const Border(
-        bottom: BorderSide(color: kBorderSubtle, width: 1),
+      shape: Border(
+        bottom: BorderSide(
+          color: isDark ? kDarkBorderSubtle : kBorderSubtle,
+          width: 1,
+        ),
       ),
       leading: showBack && canPop
           ? IconButton(

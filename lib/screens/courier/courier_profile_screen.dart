@@ -7,6 +7,7 @@ import '../../providers/courier_provider.dart';
 import '../../widgets/bh_app_bar.dart';
 import '../../widgets/bh_offline_banner.dart';
 import '../../widgets/field_card.dart';
+import 'rider_profile_widgets.dart';
 
 class CourierProfileScreen extends StatefulWidget {
   const CourierProfileScreen({super.key});
@@ -171,19 +172,8 @@ class _CourierProfileState extends State<CourierProfileScreen> {
               ),
               const SizedBox(height: kSpace12),
 
-              // ── Vehicle information ───────────────────────────────────────
-              FieldCard(
-                title: 'Vehicle Information',
-                titleIcon: Icons.two_wheeler_outlined,
-                children: p != null
-                    ? [
-                        _row2(
-                          _field('Vehicle Type', p.vehicleType ?? '—'),
-                          _field('Plate Number', p.plateNumber ?? '—'),
-                        ),
-                      ]
-                    : [_missing()],
-              ),
+              // ── Rider, vehicle and documents ──────────────────────────────
+              RiderVehicleSection(cp: cp),
               const SizedBox(height: kSpace20),
 
               // ── Logout ────────────────────────────────────────────────────
@@ -308,6 +298,7 @@ class _CourierProfileState extends State<CourierProfileScreen> {
       ),
     );
     if (ok == true && ctx.mounted) {
+      ctx.read<CourierProvider>().stop();
       await auth.logout();
       if (ctx.mounted) {
         Navigator.pushNamedAndRemoveUntil(ctx, '/login', (_) => false);

@@ -19,7 +19,8 @@ class BhStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (bg, fg, label) = _resolve(status);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final (bg, fg, label) = _resolve(status, isDark: isDark);
 
     final textStyle = size == BhChipSize.small ? kLabelSm : kLabelMd;
     final padding = size == BhChipSize.small
@@ -50,18 +51,78 @@ class BhStatusChip extends StatelessWidget {
     );
   }
 
-  static (Color bg, Color fg, String label) _resolve(String status) =>
+  static (Color bg, Color fg, String label) _resolve(
+    String status, {
+    required bool isDark,
+  }) =>
       switch (status) {
-        'pending'           => (kStatusPendingBg,   kStatusPendingFg,   'Pending'),
-        'ready_for_pickup'  => (kStatusPickupBg,    kStatusPickupFg,    'Ready for Pickup'),
-        'out_for_delivery'  => (kStatusOnWayBg,     kStatusOnWayFg,     'Out for Delivery'),
-        'delivered'         => (kStatusDeliveredBg, kStatusDeliveredFg, 'Delivered'),
-        'failed'            => (kStatusFailedBg,    kStatusFailedFg,    'Failed'),
-        'cancelled'         => (kStatusCancelledBg, kStatusCancelledFg, 'Cancelled'),
-        'active'            => (kStatusDeliveredBg, kStatusDeliveredFg, 'Active'),
-        'inactive'          => (kStatusCancelledBg, kStatusCancelledFg, 'Inactive'),
-        'approved'          => (kStatusDeliveredBg, kStatusDeliveredFg, 'Approved'),
-        'suspended'         => (kStatusFailedBg,    kStatusFailedFg,    'Suspended'),
-        final s             => (kStatusCancelledBg, kStatusCancelledFg, s),
+        'pending'           => (
+            isDark ? kDarkStatusPendingBg   : kStatusPendingBg,
+            isDark ? kDarkStatusPendingFg   : kStatusPendingFg,
+            'Pending'),
+        'ready_for_pickup'  => (
+            isDark ? kDarkStatusPickupBg    : kStatusPickupBg,
+            isDark ? kDarkStatusPickupFg    : kStatusPickupFg,
+            'Ready for Pickup'),
+        'awaiting_pickup'   => (
+            isDark ? kDarkStatusPickupBg    : kStatusPickupBg,
+            isDark ? kDarkStatusPickupFg    : kStatusPickupFg,
+            'Ready for Pickup'),
+        'assigned'          => (
+            isDark ? kDarkStatusPickupBg    : kStatusPickupBg,
+            isDark ? kDarkStatusPickupFg    : kStatusPickupFg,
+            'Assigned'),
+        'picked_up' || 'in_transit' => (
+            isDark ? kDarkStatusOnWayBg     : kStatusOnWayBg,
+            isDark ? kDarkStatusOnWayFg     : kStatusOnWayFg,
+            'Picked Up'),
+        'at_hub'            => (
+            isDark ? kDarkStatusPendingBg   : kStatusPendingBg,
+            isDark ? kDarkStatusPendingFg   : kStatusPendingFg,
+            'At Hub'),
+        'out_for_delivery'  => (
+            isDark ? kDarkStatusOnWayBg     : kStatusOnWayBg,
+            isDark ? kDarkStatusOnWayFg     : kStatusOnWayFg,
+            'Out for Delivery'),
+        'failed_delivery'   => (
+            isDark ? kDarkStatusFailedBg    : kStatusFailedBg,
+            isDark ? kDarkStatusFailedFg    : kStatusFailedFg,
+            'Failed Delivery'),
+        'return_to_sender'  => (
+            isDark ? kDarkStatusFailedBg    : kStatusFailedBg,
+            isDark ? kDarkStatusFailedFg    : kStatusFailedFg,
+            'Return to Sender'),
+        'delivered'         => (
+            isDark ? kDarkStatusDeliveredBg : kStatusDeliveredBg,
+            isDark ? kDarkStatusDeliveredFg : kStatusDeliveredFg,
+            'Delivered'),
+        'failed'            => (
+            isDark ? kDarkStatusFailedBg    : kStatusFailedBg,
+            isDark ? kDarkStatusFailedFg    : kStatusFailedFg,
+            'Failed'),
+        'cancelled'         => (
+            isDark ? kDarkStatusCancelledBg : kStatusCancelledBg,
+            isDark ? kDarkStatusCancelledFg : kStatusCancelledFg,
+            'Cancelled'),
+        'active'            => (
+            isDark ? kDarkStatusDeliveredBg : kStatusDeliveredBg,
+            isDark ? kDarkStatusDeliveredFg : kStatusDeliveredFg,
+            'Active'),
+        'inactive'          => (
+            isDark ? kDarkStatusCancelledBg : kStatusCancelledBg,
+            isDark ? kDarkStatusCancelledFg : kStatusCancelledFg,
+            'Inactive'),
+        'approved'          => (
+            isDark ? kDarkStatusDeliveredBg : kStatusDeliveredBg,
+            isDark ? kDarkStatusDeliveredFg : kStatusDeliveredFg,
+            'Approved'),
+        'suspended'         => (
+            isDark ? kDarkStatusFailedBg    : kStatusFailedBg,
+            isDark ? kDarkStatusFailedFg    : kStatusFailedFg,
+            'Suspended'),
+        final s             => (
+            isDark ? kDarkStatusCancelledBg : kStatusCancelledBg,
+            isDark ? kDarkStatusCancelledFg : kStatusCancelledFg,
+            s),
       };
 }

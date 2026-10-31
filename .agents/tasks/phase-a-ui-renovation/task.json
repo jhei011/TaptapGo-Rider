@@ -1,0 +1,7 @@
+{
+  "task_id": "task-phase-a-ui-renovation",
+  "task_description": "Phase A of the Bilis Hatid Rider App renovation: design token system, ThemeData (light + dark), theme preference persistence, offline banner, skeleton loader, component library, navigation shell replacement, restyle all 5 courier screens + login screen, scan_code_parser utility + unit tests, wire into main.dart. No backend changes. No new feature screens.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

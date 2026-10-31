@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_tokens.dart';
-import '../../core/constants/app_constants.dart';
+import '../../models/rider_job.dart';
 import '../../providers/courier_provider.dart';
-import '../../models/order.dart';
 import '../../widgets/bh_app_bar.dart';
 import '../../widgets/bh_skeleton.dart';
-import '../../widgets/bh_parcel_card.dart';
 import '../../widgets/bh_offline_banner.dart';
 import '../../widgets/bh_empty_state.dart';
+import 'rider_job_widgets.dart';
 
+/// My Jobs: active pickup and delivery jobs, and recently finished ones.
 class CourierOrdersScreen extends StatefulWidget {
   const CourierOrdersScreen({super.key});
   @override
@@ -17,38 +17,40 @@ class CourierOrdersScreen extends StatefulWidget {
 }
 
 class _CourierOrdersState extends State<CourierOrdersScreen> {
-  String? _filterStatus;
+  String _filter = 'active';
 
-  // Tab filter definitions (kept as data source for chip labels/statuses)
+  // Tab filter definitions (kept as data source for chip labels)
   static const _tabDefs = [
-    _Tab('All', null),
-    _Tab('Pickup', 'ready_for_pickup'),
-    _Tab('On the Way', 'out_for_delivery'),
-    _Tab('Delivered', 'delivered'),
+    _Tab('Active', 'active'),
+    _Tab('Pickups', 'pickup'),
+    _Tab('Deliveries', 'delivery'),
+    _Tab('Finished', 'finished'),
   ];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback(
-        (_) => context.read<CourierProvider>().loadOrders());
+        (_) => context.read<CourierProvider>().loadJobs());
   }
 
-  List<Order> _filtered(List<Order> orders, String? status) {
-    if (status == null) return orders;
-    return orders.where((o) => o.status == status).toList();
-  }
+  List<RiderJob> _filtered(CourierProvider cp) => switch (_filter) {
+        'pickup'   => cp.activeJobs.where((j) => j.isPickup).toList(),
+        'delivery' => cp.activeJobs.where((j) => j.isDelivery).toList(),
+        'finished' => cp.recentJobs,
+        _          => cp.activeJobs,
+      };
 
   @override
   Widget build(BuildContext context) {
     final cp = context.watch<CourierProvider>();
-    final filtered = _filtered(cp.orders, _filterStatus);
+    final jobs = _filtered(cp);
 
     return Scaffold(
       backgroundColor: kSurfaceRaised,
-      appBar: const BhAppBar(title: 'My Parcels', showBack: false),
+      appBar: const BhAppBar(title: 'My Jobs', showBack: false),
       body: BhOfflineBanner(
-        child: cp.loadingOrders
+        child: cp.loadingJobs && cp.activeJobs.isEmpty && cp.recentJobs.isEmpty
             ? const Padding(
                 padding: EdgeInsets.all(kSpace16),
                 child: SkeletonList(count: 5),
@@ -58,32 +60,29 @@ class _CourierOrdersState extends State<CourierOrdersScreen> {
                   // ── Filter chip row ──────────────────────────────────
                   _FilterChipRow(
                     tabs: _tabDefs,
-                    selected: _filterStatus,
-                    onSelect: (status) =>
-                        setState(() => _filterStatus = status),
+                    selected: _filter,
+                    onSelect: (f) => setState(() => _filter = f),
                   ),
 
-                  // ── Order list ───────────────────────────────────────
+                  // ── Job list ─────────────────────────────────────────
                   Expanded(
-                    child: filtered.isEmpty
-                        ? BhEmptyState(
-                            icon: Icons.inventory_2_outlined,
-                            title: _filterStatus == null
-                                ? 'No parcels yet'
-                                : 'No ${AppConstants.orderStatusLabel(_filterStatus!).toLowerCase()} parcels',
-                            subtitle: 'Assigned parcels will appear here',
-                          )
-                        : RefreshIndicator(
-                            onRefresh: cp.loadOrders,
-                            color: kBrand600,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(
-                                  kSpace14, kSpace14, kSpace14, 80),
-                              itemCount: filtered.length,
-                              itemBuilder: (_, i) =>
-                                  BhParcelCard(order: filtered[i], cp: cp),
+                    child: RefreshIndicator(
+                      onRefresh: cp.loadJobs,
+                      color: kBrand600,
+                      child: jobs.isEmpty
+                          ? ListView(children: [
+                              BhEmptyState(
+                                icon: Icons.inventory_2_outlined,
+                                title: _filter == 'finished' ? 'No finished jobs yet' : 'No active jobs',
+                                subtitle: 'Go Online on Home to receive job offers',
+                              ),
+                            ])
+                          : ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(kSpace14, kSpace14, kSpace14, 80),
+                              itemCount: jobs.length,
+                              itemBuilder: (_, i) => RiderJobCard(job: jobs[i]),
                             ),
-                          ),
+                    ),
                   ),
                 ],
               ),
@@ -95,8 +94,8 @@ class _CourierOrdersState extends State<CourierOrdersScreen> {
 // ── Filter chip row ───────────────────────────────────────────────────────────
 class _FilterChipRow extends StatelessWidget {
   final List<_Tab> tabs;
-  final String? selected;
-  final ValueChanged<String?> onSelect;
+  final String selected;
+  final ValueChanged<String> onSelect;
 
   const _FilterChipRow({
     required this.tabs,
@@ -114,11 +113,11 @@ class _FilterChipRow extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: tabs.map((tab) {
-            final isSelected = tab.status == selected;
+            final isSelected = tab.key == selected;
             return Padding(
               padding: const EdgeInsets.only(right: kSpace8),
               child: GestureDetector(
-                onTap: () => onSelect(tab.status),
+                onTap: () => onSelect(tab.key),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: kSpace12, vertical: kSpace8),
@@ -148,6 +147,6 @@ class _FilterChipRow extends StatelessWidget {
 
 class _Tab {
   final String label;
-  final String? status;
-  const _Tab(this.label, this.status);
+  final String key;
+  const _Tab(this.label, this.key);
 }

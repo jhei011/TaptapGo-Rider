@@ -13,16 +13,20 @@ import 'providers/courier_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_buyer_screen.dart';
 import 'screens/auth/register_seller_screen.dart';
-import 'screens/auth/register_courier_screen.dart';
 import 'screens/auth/rider_activation_screen.dart';
 
 // Role shells
 import 'screens/buyer/buyer_shell.dart';
 import 'screens/seller/seller_shell.dart';
 import 'screens/courier/courier_shell.dart';
+import 'screens/linehaul/linehaul_home_screen.dart';
 
 // Courier screens (pushed on top of shell)
-import 'screens/courier/parcel_detail_screen.dart';
+import 'screens/courier/rider_job_screen.dart';
+import 'screens/courier/waybill_scanner_screen.dart';
+
+// Shared widgets
+import 'widgets/taptapgo_splash.dart';
 
 // Buyer sub-screens (kept for multi-role login support)
 import 'screens/buyer/product_detail_screen.dart';
@@ -37,17 +41,17 @@ import 'screens/seller/add_edit_product_screen.dart';
 import 'screens/seller/seller_edit_profile_screen.dart';
 
 void main() {
-  runApp(const BilisHatidApp());
+  runApp(const TaptapGoApp());
 }
 
-class BilisHatidApp extends StatefulWidget {
-  const BilisHatidApp({super.key});
+class TaptapGoApp extends StatefulWidget {
+  const TaptapGoApp({super.key});
 
   @override
-  State<BilisHatidApp> createState() => _BilisHatidAppState();
+  State<TaptapGoApp> createState() => _TaptapGoAppState();
 }
 
-class _BilisHatidAppState extends State<BilisHatidApp> {
+class _TaptapGoAppState extends State<TaptapGoApp> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -61,26 +65,27 @@ class _BilisHatidAppState extends State<BilisHatidApp> {
       ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, _) => MaterialApp(
-          title: 'Bilis Hatid Express Inc.',
+          title: 'TaptapGo',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeService.flutterMode,
-          home: const _AppRoot(),
+          home: const _SplashGate(),
           routes: {
             // Auth
             '/login':             (_) => const LoginScreen(),
             '/register/buyer':    (_) => const RegisterBuyerScreen(),
             '/register/seller':   (_) => const RegisterSellerScreen(),
-            '/register/courier':  (_) => const RegisterCourierScreen(),
+            // No '/register/courier': riders are created by their logistics company (TC-RID-029)
 
             // Role shells
             '/buyer':   (_) => const BuyerShell(),
             '/seller':  (_) => const SellerShell(),
             '/courier': (_) => const CourierShell(),
+            '/linehaul': (_) => const LinehaulHomeScreen(),
 
             // Courier routes
-            '/courier/scan': (_) => const _ScanPlaceholder(),
+            '/courier/scan': (_) => const WaybillScannerScreen(confirmPickups: true),
 
             // Buyer routes
             '/buyer/cart':         (_) => const BuyerCartScreen(),
@@ -94,24 +99,12 @@ class _BilisHatidAppState extends State<BilisHatidApp> {
             '/seller/profile/edit':  (_) => const SellerEditProfileScreen(),
           },
           onGenerateRoute: (settings) {
-            // /courier/parcel — parcelId passed as arguments (int)
-            if (settings.name == '/courier/parcel') {
+            // /courier/job — rider job id passed as arguments (int)
+            if (settings.name == '/courier/job') {
               final id = settings.arguments as int?;
               if (id != null) {
                 return MaterialPageRoute(
-                  builder: (_) => ParcelDetailScreen(parcelId: id),
-                );
-              }
-            }
-
-            // /courier/parcel/:id — path-based fallback
-            if (settings.name != null &&
-                settings.name!.startsWith('/courier/parcel/')) {
-              final id = int.tryParse(
-                  settings.name!.replaceFirst('/courier/parcel/', ''));
-              if (id != null) {
-                return MaterialPageRoute(
-                  builder: (_) => ParcelDetailScreen(parcelId: id),
+                  builder: (_) => RiderJobScreen(jobId: id),
                 );
               }
             }
@@ -170,32 +163,47 @@ class _BilisHatidAppState extends State<BilisHatidApp> {
   }
 }
 
-/// Splash / boot — checks stored token and redirects accordingly.
-class _AppRoot extends StatefulWidget {
-  const _AppRoot();
-  @override State<_AppRoot> createState() => _AppRootState();
+/// Boots auth in the background while the new animated splash plays,
+/// then navigates to the correct role shell (or login) when both are done.
+class _SplashGate extends StatefulWidget {
+  const _SplashGate();
+  @override
+  State<_SplashGate> createState() => _SplashGateState();
 }
 
-class _AppRootState extends State<_AppRoot> {
+class _SplashGateState extends State<_SplashGate> {
+  bool _authDone = false;
+  bool _splashDone = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ThemeService>().load();
-      _boot();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final themeService = context.read<ThemeService>();
+      final authProvider = context.read<AuthProvider>();
+      await themeService.load();
+      await authProvider.boot();
+      if (mounted) setState(() => _authDone = true);
+      _maybeNavigate();
     });
   }
 
-  Future<void> _boot() async {
-    final auth = context.read<AuthProvider>();
-    await auth.boot();
-    if (!mounted) return;
+  void _onSplashFinished() {
+    setState(() => _splashDone = true);
+    _maybeNavigate();
+  }
 
+  void _maybeNavigate() {
+    if (!_authDone || !_splashDone) return;
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
     switch (auth.status) {
       case AuthStatus.authenticated:
         final role = auth.user?.role;
         if (role == 'courier') {
           Navigator.pushReplacementNamed(context, '/courier');
+        } else if (role == 'linehaul') {
+          Navigator.pushReplacementNamed(context, '/linehaul');
         } else if (role == 'buyer') {
           Navigator.pushReplacementNamed(context, '/buyer');
         } else if (role == 'seller') {
@@ -210,51 +218,7 @@ class _AppRootState extends State<_AppRoot> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0E2A38),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80, height: 80,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(Icons.local_shipping,
-                  size: 42, color: Colors.white),
-            ),
-            const SizedBox(height: 18),
-            const Text('Bilis Hatid',
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white)),
-            const Text('Express Inc.',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF4A949C))),
-            const SizedBox(height: 32),
-            const CircularProgressIndicator(
-                color: Color(0xFF4A949C), strokeWidth: 2.5),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Placeholder for the /courier/scan route.
-/// Will be replaced by the full scanner screen in Phase C.
-class _ScanPlaceholder extends StatelessWidget {
-  const _ScanPlaceholder();
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Scan Parcel')),
-        body: const Center(child: Text('Scan — coming in Phase C')),
+  Widget build(BuildContext context) => TaptapGoSplash(
+        onFinished: _onSplashFinished,
       );
 }
