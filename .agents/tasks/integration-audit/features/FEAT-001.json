@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Harden the Laravel API route middleware: (1) add `api.role:courier` to the /api/courier/* prefix group, (2) add `api.role:linehaul` to the /api/linehaul/* route (wrap in prefix group), (3) close the forbidden POST /api/register/courier endpoint (TC-RID-029), and (4) add the `profile` field to the login response so freshly-logged-in couriers have profile data available immediately.",
+  "status": "completed",
+  "steps": [
+    "Open `C:\\Users\\emjhe\\TaptapShop\\TaptapShop Web\\routes\\api.php`. On the line `Route::prefix('courier')->group(function () {` (around line 84), change it to `Route::prefix('courier')->middleware('api.role:courier')->group(function () {`. Do not move or delete any routes inside the group.",
+    "In the same file, replace the single line `Route::get('/linehaul/home', [\\App\\Http\\Controllers\\Api\\ApiLinehaulController::class, 'home']);` with a group: `Route::prefix('linehaul')->middleware('api.role:linehaul')->group(function () { Route::get('/home', [\\App\\Http\\Controllers\\Api\\ApiLinehaulController::class, 'home']); });`. The Flutter app calls `/api/linehaul/home` which becomes `/api/linehaul/home` with this prefix — URL unchanged.",
+    "In the same file, remove the public route `Route::post('/register/courier', [ApiAuthController::class, 'registerCourier']);` (around line 12, inside the public routes block at the top).",
+    "Open `C:\\Users\\emjhe\\TaptapShop\\TaptapShop Web\\app\\Http\\Controllers\\Api\\ApiAuthController.php`. Replace the body of the `registerCourier()` method with `return response()->json(['message' => 'Rider self-registration is not available.'], 404);` to make any direct call explicit-fail. (The method can remain as a tombstone.)",
+    "In `ApiAuthController::login()`, after `$token = $user->createToken('mobile-app')->plainTextToken;` add `$user->loadMissing('profile');` and add `'profile' => $user->profile,` to the returned `user` array. This applies to all roles (buyer, seller, courier) — it is safe because profile is a standard hasOne relation on every user."
+  ],
+  "acceptance_criteria": [
+    "A buyer Sanctum token hitting `GET /api/courier/dashboard` returns HTTP 403 with `{\"message\":\"Forbidden\"}`.",
+    "A courier Sanctum token hitting `GET /api/courier/dashboard` returns HTTP 200.",
+    "A courier Sanctum token hitting `GET /api/linehaul/home` returns HTTP 403.",
+    "A linehaul Sanctum token hitting `GET /api/linehaul/home` returns HTTP 200.",
+    "`POST /api/register/courier` returns HTTP 404 regardless of payload.",
+    "`POST /api/login` with a courier's credentials returns a `user` object that includes a `profile` key."
+  ],
+  "verification": [
+    "Run `php artisan test` from `C:\\Users\\emjhe\\TaptapShop\\TaptapShop Web\\` — all existing tests must pass.",
+    "Run `flutter analyze` from `c:\\Users\\emjhe\\TaptapShop\\TaptapGo\\` — no errors (the Flutter side is unchanged in this FEAT)."
+  ],
+  "blocked_reason": null,
+  "findings": "All 5 steps implemented successfully. The existing test in RiderModulesTest.php asserted assertForbidden() (HTTP 403) for POST /api/register/courier, but FEAT-001 acceptance criteria requires HTTP 404 (route removed). Test updated to assertNotFound(). All 44 rider tests pass. Flutter analyze shows 3 pre-existing info-level warnings in taptapgo_splash_new.dart (missing const keywords) — unrelated to this FEAT, no Flutter files were changed. Pre-existing web-auth test failures (CommissionReportTest, AuthenticationTest, EmailVerificationTest, GoogleSignInTest, RegistrationTest) are unrelated to API route middleware changes and were failing before this FEAT."
+}
