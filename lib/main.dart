@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
+import 'core/demo/demo_api.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/location_service.dart';
 import 'core/services/theme_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/buyer_provider.dart';
@@ -12,6 +15,7 @@ import 'providers/courier_provider.dart';
 // Auth screens
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_buyer_screen.dart';
+import 'screens/auth/register_courier_screen.dart';
 import 'screens/auth/register_seller_screen.dart';
 import 'screens/auth/rider_activation_screen.dart';
 
@@ -23,10 +27,11 @@ import 'screens/linehaul/linehaul_home_screen.dart';
 
 // Courier screens (pushed on top of shell)
 import 'screens/courier/rider_job_screen.dart';
+import 'screens/courier/rider_notifications_screen.dart';
 import 'screens/courier/waybill_scanner_screen.dart';
 
 // Shared widgets
-import 'widgets/taptapgo_splash.dart';
+import 'widgets/taptapgo_splash_new.dart';
 
 // Buyer sub-screens (kept for multi-role login support)
 import 'screens/buyer/product_detail_screen.dart';
@@ -41,6 +46,13 @@ import 'screens/seller/add_edit_product_screen.dart';
 import 'screens/seller/seller_edit_profile_screen.dart';
 
 void main() {
+  if (kDemoMode) {
+    // No account or server: every request is answered on the device (see DemoApi)
+    final demo = DemoApi();
+    LocationService.source = DemoLocation();
+    http.runWithClient(() => runApp(const TaptapGoApp()), () => demo.client);
+    return;
+  }
   runApp(const TaptapGoApp());
 }
 
@@ -64,9 +76,15 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
         ChangeNotifierProvider(create: (_) => ThemeService()),
       ],
       child: Consumer<ThemeService>(
-        builder: (context, themeService, _) => MaterialApp(
+        builder: (context, themeService, _) => Listener(
+          onPointerDown: (_) => context.read<AuthProvider>().resetIdleTimer(),
+          child: MaterialApp(
           title: 'TaptapGo',
           debugShowCheckedModeBanner: false,
+          // Marks every demo screen, so sample data cannot be mistaken for real results
+          builder: kDemoMode
+              ? (context, child) => Banner(message: 'DEMO', location: BannerLocation.topEnd, child: child!)
+              : null,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeService.flutterMode,
@@ -76,7 +94,9 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
             '/login':             (_) => const LoginScreen(),
             '/register/buyer':    (_) => const RegisterBuyerScreen(),
             '/register/seller':   (_) => const RegisterSellerScreen(),
-            // No '/register/courier': riders are created by their logistics company (TC-RID-029)
+            // Riders cannot self-register (TC-RID-029); this screen explains the
+            // activation flow managed by the logistics partner.
+            '/register/courier':  (_) => const RegisterCourierScreen(),
 
             // Role shells
             '/buyer':   (_) => const BuyerShell(),
@@ -85,7 +105,8 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
             '/linehaul': (_) => const LinehaulHomeScreen(),
 
             // Courier routes
-            '/courier/scan': (_) => const WaybillScannerScreen(confirmPickups: true),
+            '/courier/scan':          (_) => const WaybillScannerScreen(confirmPickups: true),
+            '/courier/notifications': (_) => const RiderNotificationsScreen(),
 
             // Buyer routes
             '/buyer/cart':         (_) => const BuyerCartScreen(),
@@ -158,6 +179,7 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
             return null;
           },
         ),
+        ),
       ),
     );
   }
@@ -218,7 +240,7 @@ class _SplashGateState extends State<_SplashGate> {
   }
 
   @override
-  Widget build(BuildContext context) => TaptapGoSplash(
+  Widget build(BuildContext context) => TapTapGoSplashScreen(
         onFinished: _onSplashFinished,
       );
 }

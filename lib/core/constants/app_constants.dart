@@ -1,7 +1,11 @@
 class AppConstants {
-  // Physical device: your PC's local IP on the same Wi-Fi as the phone
-  // Run Laravel with: php artisan serve --host=0.0.0.0 --port=8000
-  static const String baseUrl = 'http://192.168.1.39:8000';
+  // For now: your laptop's local server and database, through the USB cable.
+  // On the laptop: php artisan serve --host=127.0.0.1 --port=8000
+  //   then: adb reverse tcp:8000 tcp:8000   (again after every re-plug)
+  // Other servers, without editing this file:
+  //   Same Wi-Fi:   flutter run --dart-define=API_BASE=http://192.168.1.39:8000
+  //   Live server:  flutter run --dart-define=API_BASE=https://taptapshop.store
+  static const String baseUrl = String.fromEnvironment('API_BASE', defaultValue: 'http://127.0.0.1:8000');
   static const String apiBase = '$baseUrl/api';
 
   // For Android emulator swap to: 'http://10.0.2.2:8000'
@@ -16,7 +20,9 @@ class AppConstants {
 
   static const List<String> orderStatuses = [
     'pending', 'confirmed', 'ready_for_pickup',
+    'awaiting_pickup', 'picked_up', 'at_hub',
     'out_for_delivery', 'delivered', 'cancelled',
+    'failed_delivery', 'return_to_sender',
   ];
 
   static String orderStatusLabel(String s) => const {

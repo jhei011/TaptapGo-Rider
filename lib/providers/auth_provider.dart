@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import '../core/services/api.dart';
 import '../core/services/auth_service.dart';
@@ -6,6 +8,9 @@ import '../models/user.dart';
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
 class AuthProvider extends ChangeNotifier {
+  static const _riderIdleTimeout = Duration(minutes: 30);
+  Timer? _idleTimer;
+
   User? _user;
   AuthStatus _status = AuthStatus.unknown;
   bool _loading = false;
@@ -25,6 +30,7 @@ class AuthProvider extends ChangeNotifier {
       final d = await Api.get('/me') as Map<String, dynamic>;
       _user = User.fromJson(d);
       _status = AuthStatus.authenticated;
+      resetIdleTimer();
       notifyListeners();
     } catch (_) {
       await Api.deleteToken();
@@ -40,6 +46,7 @@ class AuthProvider extends ChangeNotifier {
       await Api.saveToken(r.token);
       _user = r.user;
       _status = AuthStatus.authenticated;
+      resetIdleTimer();
       _loading = false; notifyListeners();
       return true;
     } on ApiError catch (e) {
@@ -54,12 +61,29 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    _idleTimer?.cancel();
+    _idleTimer = null;
     await AuthService.logout();
     _user = null; _status = AuthStatus.unauthenticated; notifyListeners();
   }
 
   void updateUser(User u) { _user = u; notifyListeners(); }
   void clearError()       { _error = null; notifyListeners(); }
+
+  void resetIdleTimer() {
+    final role = _user?.role;
+    if (role != 'courier' && role != 'linehaul') return;
+    _idleTimer?.cancel();
+    _idleTimer = Timer(_riderIdleTimeout, _idleLogout);
+  }
+
+  Future<void> _idleLogout() async {
+    _idleTimer = null;
+    if (_status != AuthStatus.authenticated) return;
+    final role = _user?.role;
+    if (role != 'courier' && role != 'linehaul') return;
+    await logout();
+  }
 
   /// Sends a password-reset link. Returns null on success, error message on failure.
   Future<String?> forgotPassword(String email) async {
