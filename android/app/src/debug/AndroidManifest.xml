@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Plain http:// only in debug builds (local server over USB / Wi-Fi). Release
+         builds talk to https://taptapshop.store and refuse unencrypted traffic. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

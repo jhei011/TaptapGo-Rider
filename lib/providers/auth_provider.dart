@@ -92,10 +92,24 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String email, String password) =>
+      _signIn(() => AuthService.login(email, password));
+
+  /// Signs in with a Google ID token (POST /api/auth/google). Same approval gate as the
+  /// password login. Riders cannot register through Google: an email with no rider
+  /// account gets an explanation instead of a registration screen.
+  Future<bool> googleLogin(String idToken) => _signIn(() => AuthService.googleSignIn(idToken),
+      notFound: 'No TaptapGo account uses this Google email. Your logistics company creates '
+          'rider accounts; sign in with the email they registered, or open your activation link first.');
+
+  /// Shown when Google sign-in fails on the phone before reaching the server.
+  void setError(String message) { _error = message; notifyListeners(); }
+
+  Future<bool> _signIn(Future<({String token, User user, Map<String, dynamic> rawUser})> Function() call,
+      {String? notFound}) async {
     _loading = true; _error = null; notifyListeners();
     try {
-      final r = await AuthService.login(email, password);
+      final r = await call();
       if (accessProblem(r.user) case final problem?) {
         // Do not keep a token the rider cannot work with; revoke it on the server.
         await Api.saveToken(r.token);
@@ -113,7 +127,8 @@ class AuthProvider extends ChangeNotifier {
       _loading = false; notifyListeners();
       return true;
     } on ApiError catch (e) {
-      _error = e.message; _loading = false;
+      _error = notFound != null && e.isNotFound ? notFound : e.message;
+      _loading = false;
       _status = AuthStatus.unauthenticated; notifyListeners();
       return false;
     } catch (_) {

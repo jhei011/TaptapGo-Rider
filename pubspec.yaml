@@ -46,6 +46,11 @@ dependencies:
   mobile_scanner: ^7.4.2
   path_provider: ^2.1.6
 
+  # Google sign-in (same OAuth project and web client id as TaptapShop) and the
+  # official Google "G" logo (assets/images/google_g.svg)
+  google_sign_in: ^6.2.1
+  flutter_svg: ^2.0.10
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
