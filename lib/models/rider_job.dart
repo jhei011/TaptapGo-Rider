@@ -21,6 +21,10 @@ class RiderJob {
   final Map<String, String> times;
   final String? podPhotoUrl;
 
+  /// 'forward' (seller → buyer) or 'reverse' (a return: buyer → seller).
+  final String direction;
+  final String? returnNumber;
+
   const RiderJob({
     required this.id, required this.type, required this.status,
     required this.shipmentStatus, required this.attempt, required this.maxAttempts,
@@ -29,12 +33,21 @@ class RiderJob {
     required this.paymentMethod, required this.codAmount,
     required this.pickup, required this.dropoff, this.items = const [],
     this.failedReason, this.times = const {}, this.podPhotoUrl,
+    this.direction = 'forward', this.returnNumber,
   });
 
   bool get isPickup => type == 'pickup';
   bool get isDelivery => type == 'delivery';
   bool get isActive => status == 'assigned';
   bool get isCod => paymentMethod == 'cod';
+
+  /// A buyer → seller return trip. The buyer (not the seller) is at the pickup,
+  /// the seller receives the parcel, there is no delivery code and nothing to
+  /// collect, and the trip is not paid from the order (RiderJobService::pay).
+  bool get isReturn => direction == 'reverse';
+
+  /// COD is only collected on a forward delivery.
+  bool get collectsCod => isCod && !isReturn;
 
   bool get canConfirmPickup => isPickup && isActive && shipmentStatus == 'awaiting_pickup';
   bool get canStartDelivery => isDelivery && isActive && shipmentStatus == 'at_hub';
@@ -68,6 +81,8 @@ class RiderJob {
             ? (j['times'] as Map).map((k, v) => MapEntry(k.toString(), v.toString()))
             : const {},
         podPhotoUrl: j['pod_photo_url'],
+        direction: j['direction'] ?? 'forward',
+        returnNumber: j['return_number'],
       );
 }
 

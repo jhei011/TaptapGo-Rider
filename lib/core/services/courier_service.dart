@@ -2,6 +2,7 @@ import 'dart:io';
 import 'api.dart';
 import 'location_service.dart';
 import '../../models/rider_job.dart';
+import '../../models/rider_notification.dart';
 
 class CourierService {
   // ── Dashboard ────────────────────────────────────────────────────────────
@@ -101,6 +102,19 @@ class CourierService {
       }, files: {
         if (document != null) 'driver_license_document': document,
       }) as Map<String, dynamic>)['profile'] as Map<String, dynamic>;
+
+  // ── In-app notifications (A23) ────────────────────────────────────────────
+  /// GET /rider/notifications — what logistics and admin sent the rider:
+  /// a new job, a cancelled job, an expired offer.
+  static Future<List<RiderNotification>> notifications() async {
+    final d = await Api.get('/rider/notifications') as Map<String, dynamic>;
+    return (d['data'] as List? ?? [])
+        .map((n) => RiderNotification.fromJson((n as Map).cast<String, dynamic>()))
+        .toList();
+  }
+
+  static Future<void> markNotificationsRead() =>
+      Api.post('/rider/notifications/read');
 
   // ── Rider Activation ──────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> activationInfo(String token) async =>

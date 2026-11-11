@@ -147,13 +147,17 @@ class _BhBottomBar extends StatelessWidget {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: kBrand800,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0E2A38), Color(0xFF4A949C)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: kBrand900.withValues(alpha: 0.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                              color: const Color(0xFF0E2A38).withValues(alpha: 0.40),
+                              blurRadius: 14,
+                              offset: const Offset(0, 5),
                             ),
                           ],
                         ),
@@ -221,7 +225,7 @@ class _TabSlot extends StatelessWidget {
               height: 2,
               width: isSelected ? 24.0 : 0.0,
               decoration: BoxDecoration(
-                color: kBrand400,
+                color: kBrand600,
                 borderRadius: BorderRadius.circular(kRadiusFull),
               ),
             ),
@@ -233,7 +237,7 @@ class _TabSlot extends StatelessWidget {
                 Icon(
                   icon,
                   size: 22,
-                  color: isSelected ? kBrand800 : kTextMuted,
+                  color: isSelected ? kBrand600 : kTextMuted,
                 ),
                 // Online badge for Home slot
                 if (isOnline && slot == 0)
@@ -256,7 +260,7 @@ class _TabSlot extends StatelessWidget {
             if (isSelected)
               Text(
                 label,
-                style: kLabelSm.copyWith(color: kBrand800),
+                style: kLabelSm.copyWith(color: kBrand600),
               ),
           ],
         ),

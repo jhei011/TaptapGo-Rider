@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/pending_delivery_store.dart';
 import '../../core/theme/app_tokens.dart';
+import '../../core/utils/attachment_rules.dart';
+import '../../core/utils/delivery_rules.dart';
 import '../../models/rider_job.dart';
 import '../../providers/courier_provider.dart';
 import '../../widgets/bh_app_bar.dart';
@@ -133,10 +135,19 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
   Future<void> _takePhoto() async {
     // Proof of delivery is taken live with the camera; the gallery is not offered (M14)
     final shot = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 80, maxWidth: 2000);
-    if (shot != null && mounted) setState(() => _photo = File(shot.path));
+    if (shot == null) return;
+    final photo = File(shot.path);
+    // A photo over 5 MB, or one that is not a real JPG/PNG, is refused before it is sent (A16)
+    final problem = await AttachmentRules.validate(photo, kind: AttachmentKind.image);
+    if (!mounted) return;
+    if (problem != null) {
+      showResult(context, false, '', problem);
+      return;
+    }
+    setState(() => _photo = photo);
   }
 
-  Future<void> _chooseFailReason() async {
+  Future<void> _chooseFailReason(RiderJob job) async {
     String? reason;
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
@@ -146,6 +157,15 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
             padding: const EdgeInsets.all(kSpace16),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text('Why did the delivery fail?', style: kHeadingSm.copyWith(color: kTextPrimary)),
+              const SizedBox(height: kSpace4),
+              Text(
+                job.isReturn
+                    ? 'Attempt ${job.attempt} of ${job.maxAttempts}. The parcel goes back to the '
+                        'hub, and your logistics company decides what happens next.'
+                    : 'Attempt ${job.attempt} of ${job.maxAttempts}. Choosing Refused sends the parcel '
+                        'straight back to the seller (Return to Sender).',
+                style: kBodySm.copyWith(color: kTextSecondary),
+              ),
               const SizedBox(height: kSpace8),
               RadioGroup<String>(
                 groupValue: reason,
@@ -177,7 +197,11 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
     final job = _job;
     return Scaffold(
       backgroundColor: kSurfaceRaised,
-      appBar: BhAppBar(title: job == null ? 'Job' : (job.isPickup ? 'Pickup Job' : 'Delivery Job')),
+      appBar: BhAppBar(title: job == null
+          ? 'Job'
+          : job.isReturn
+              ? (job.isPickup ? 'Return Pickup' : 'Return Delivery')
+              : (job.isPickup ? 'Pickup Job' : 'Delivery Job')),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: kBrand600))
           : job == null
@@ -196,6 +220,8 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
                   color: kBrand600,
                   child: ListView(padding: const EdgeInsets.all(kSpace16), children: [
                     _header(job),
+                    const SizedBox(height: kSpace12),
+                    _progress(job),
                     const SizedBox(height: kSpace12),
                     _stopCard(job),
                     const SizedBox(height: kSpace12),
@@ -223,9 +249,77 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
                     : 'Order #${job.orderId} · ${job.parcels} parcel${job.parcels == 1 ? '' : 's'}',
                 style: kBodySm.copyWith(color: kTextSecondary),
               ),
+              if (job.isReturn) ...[
+                const SizedBox(height: kSpace6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: kStatusPendingBg,
+                    borderRadius: BorderRadius.circular(kRadiusFull),
+                  ),
+                  child: Text(
+                    'Return ${job.returnNumber ?? ''} · Buyer → seller'.trim(),
+                    style: kLabelSm.copyWith(color: kStatusPendingFg),
+                  ),
+                ),
+              ],
             ]),
           ),
           BhStatusChip(status: job.status == 'failed' ? 'failed_delivery' : job.shipmentStatus),
+        ]),
+      );
+
+  /// Where the parcel is in the flow, with every step already reached filled in (A10).
+  Widget _progress(RiderJob job) {
+    final steps = job.isPickup
+        ? [
+            ('Assigned', 'assigned'),
+            (job.isReturn ? 'Collected from buyer' : 'Picked up', 'picked_up'),
+            ('At hub', 'at_hub'),
+          ]
+        : [
+            ('Assigned', 'assigned'),
+            ('Out for delivery', 'out_for_delivery'),
+            (job.isReturn ? 'Returned to seller' : 'Delivered', 'delivered'),
+          ];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: kSpace12, vertical: kSpace14),
+      decoration: cardDecoration(),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        for (var i = 0; i < steps.length; i++) ...[
+          if (i > 0)
+            Expanded(
+              child: Container(
+                height: 2,
+                margin: const EdgeInsets.only(top: 10, left: 4, right: 4),
+                color: job.times[steps[i].$2] != null ? kBrand600 : kBorderDefault,
+              ),
+            ),
+          _step(steps[i].$1, reached: job.times[steps[i].$2] != null),
+        ],
+      ]),
+    );
+  }
+
+  Widget _step(String label, {required bool reached}) => SizedBox(
+        width: 84,
+        child: Column(children: [
+          Container(
+            width: 22, height: 22,
+            decoration: BoxDecoration(
+              color: reached ? kBrand600 : kSurfaceBase,
+              shape: BoxShape.circle,
+              border: Border.all(color: reached ? kBrand600 : kBorderStrong),
+            ),
+            child: Icon(Icons.check, size: 13, color: reached ? Colors.white : kTextMuted),
+          ),
+          const SizedBox(height: kSpace4),
+          Text(label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: kLabelSm.copyWith(
+                  color: reached ? kTextPrimary : kTextMuted,
+                  fontWeight: reached ? FontWeight.w700 : FontWeight.w500)),
         ]),
       );
 
@@ -235,7 +329,12 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
       padding: const EdgeInsets.all(kSpace16),
       decoration: cardDecoration(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(job.isPickup ? 'Pick up from' : 'Deliver to', style: kLabelSm.copyWith(color: kTextMuted)),
+        Text(
+          job.isPickup
+              ? (job.isReturn ? 'Pick up from buyer' : 'Pick up from seller')
+              : (job.isReturn ? 'Deliver back to seller' : 'Deliver to buyer'),
+          style: kLabelSm.copyWith(color: kTextMuted),
+        ),
         const SizedBox(height: kSpace4),
         Text(stop.name, style: kHeadingSm.copyWith(color: kTextPrimary)),
         if (stop.phone != null) Text(stop.phone!, style: kBodySm.copyWith(color: kTextSecondary)),
@@ -274,8 +373,14 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
       padding: const EdgeInsets.all(kSpace16),
       decoration: cardDecoration(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _row('Payment', job.isCod ? 'COD ${peso(job.codAmount)}' : '${peso(0)} COD · Paid (${job.paymentMethod.toUpperCase()})'),
-        _row('Your pay', job.status == 'assigned' ? '${peso(job.pay)} when done' : peso(job.earned)),
+        if (job.isReturn) ...[
+          _row('Trip', 'Return · nothing to collect'),
+          if (job.returnNumber != null) _row('Return no.', job.returnNumber!),
+          _row('Your pay', job.status == 'assigned' ? 'No pay for a return trip' : peso(job.earned)),
+        ] else ...[
+          _row('Payment', job.isCod ? 'COD ${peso(job.codAmount)}' : '${peso(0)} COD · Paid (${job.paymentMethod.toUpperCase()})'),
+          _row('Your pay', job.status == 'assigned' ? '${peso(job.pay)} when done' : peso(job.earned)),
+        ],
         if (job.result != null) _row('Result', job.result!),
         if (job.failedReason != null) _row('Failed reason', job.failedReason!),
         for (final item in job.items) _row('Item', '${item.quantity} × ${item.name}'),
@@ -401,46 +506,62 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
             onPressed: _busy ? null : _takePhoto,
           ),
           const SizedBox(height: kSpace10),
-          TextField(
-            key: const Key('otpField'),
-            controller: _otp,
-            keyboardType: TextInputType.number,
-            maxLength: 6,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            autofillHints: const [AutofillHints.oneTimeCode],
-            decoration: const InputDecoration(
-                labelText: 'Delivery code from the buyer', counterText: '', border: OutlineInputBorder()),
-          ),
-          if (job.isCod) ...[
-            const SizedBox(height: kSpace10),
+          if (job.isReturn)
+            Text(
+              'Return trip: the seller receives the parcel, so there is no delivery code '
+              'and nothing to collect. Take the photo and hand it over.',
+              style: kBodySm.copyWith(color: kTextSecondary),
+            )
+          else ...[
             TextField(
-              key: const Key('codField'),
-              controller: _cod,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
-              decoration: InputDecoration(
-                labelText: 'COD collected (${peso(job.codAmount)})', prefixText: '₱', border: const OutlineInputBorder()),
+              key: const Key('otpField'),
+              controller: _otp,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              autofillHints: const [AutofillHints.oneTimeCode],
+              decoration: const InputDecoration(
+                  labelText: 'Delivery code from the buyer', counterText: '', border: OutlineInputBorder()),
             ),
+            if (job.collectsCod) ...[
+              const SizedBox(height: kSpace10),
+              TextField(
+                key: const Key('codField'),
+                controller: _cod,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+                decoration: InputDecoration(
+                  labelText: 'COD collected (${peso(job.codAmount)})',
+                  helperText: 'Must match the order total exactly.',
+                  prefixText: '₱',
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
           ],
           const SizedBox(height: kSpace12),
-          _primary('Mark as Delivered', Icons.check_circle_outline, () {
+          _primary(job.isReturn ? 'Mark as Returned' : 'Mark as Delivered', Icons.check_circle_outline, () {
             final problem = _photo == null
                 ? 'Take a proof-of-delivery photo.'
-                : _otp.text.length != 6
+                : !job.isReturn && _otp.text.length != 6
                     ? 'Enter the 6-digit delivery code from the buyer.'
-                    : job.isCod && _cod.text.trim().isEmpty
-                        ? 'Enter the COD amount you collected.'
+                    : job.collectsCod
+                        ? DeliveryRules.codProblem(expected: job.codAmount, entered: _cod.text)
                         : null;
             if (problem != null) {
               showResult(context, false, '', problem);
               return;
             }
-            _act((cp) => cp.deliver(job, photo: _photo!, otp: _otp.text, codAmount: job.isCod ? _cod.text.trim() : null),
-                'Parcel delivered.');
+            _act(
+                (cp) => cp.deliver(job,
+                    photo: _photo!,
+                    otp: job.isReturn ? '' : _otp.text,
+                    codAmount: job.collectsCod ? _cod.text.trim() : null),
+                job.isReturn ? 'Returned to the seller.' : 'Parcel delivered.');
           }),
           const SizedBox(height: kSpace8),
           OutlinedButton(
-            onPressed: _busy ? null : _chooseFailReason,
+            onPressed: _busy ? null : () => _chooseFailReason(job),
             style: OutlinedButton.styleFrom(foregroundColor: kActionDestructive, side: const BorderSide(color: kActionDestructive)),
             child: const Text('Mark as Failed'),
           ),

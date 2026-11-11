@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../constants/app_constants.dart';
+import '../demo/demo_api.dart' show kDemoMode;
 
 class ApiError implements Exception {
   final String message;
@@ -14,7 +15,11 @@ class ApiError implements Exception {
 class Api {
   static const _ss = FlutterSecureStorage();
 
-  static Future<String?> getToken() => _ss.read(key: AppConstants.tokenKey);
+  // The demo build has no account, so it counts as logged in without touching the phone's saved login
+  static Future<String?> getToken() async {
+    if (kDemoMode) return 'demo-token';
+    return _ss.read(key: AppConstants.tokenKey);
+  }
   static Future<void> saveToken(String t) => _ss.write(key: AppConstants.tokenKey, value: t);
   static Future<void> deleteToken() => _ss.delete(key: AppConstants.tokenKey);
 

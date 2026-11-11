@@ -228,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF111827)),
               decoration: _inputDeco(
                   hint: 'Enter your email', icon: Icons.email_outlined),
               validator: (v) {
@@ -247,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: _obscure,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _login(),
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF111827)),
               decoration:
                   _inputDeco(hint: 'Enter your password', icon: Icons.lock_outline)
                       .copyWith(

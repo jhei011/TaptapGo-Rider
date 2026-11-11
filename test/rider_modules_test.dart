@@ -17,6 +17,7 @@ import 'package:taptap_go/screens/courier/courier_dashboard_screen.dart';
 import 'package:taptap_go/screens/courier/courier_earnings_screen.dart';
 import 'package:taptap_go/screens/courier/rider_job_screen.dart';
 import 'package:taptap_go/screens/courier/rider_job_widgets.dart';
+import 'package:taptap_go/screens/courier/rider_notifications_screen.dart';
 import 'package:taptap_go/screens/courier/rider_profile_widgets.dart';
 import 'package:taptap_go/screens/courier/waybill_scanner_screen.dart';
 
@@ -28,6 +29,8 @@ Map<String, dynamic> job({
   String status = 'assigned',
   String shipment = 'awaiting_pickup',
   String payment = 'cod',
+  String direction = 'forward',
+  String? returnNumber,
 }) =>
     {
       'id': id, 'type': type, 'status': status, 'shipment_status': shipment,
@@ -45,6 +48,7 @@ Map<String, dynamic> job({
       },
       'items': [{'name': 'Rattan Fruit Basket', 'quantity': 1}],
       'failed_reason': null, 'times': {'assigned': '2026-10-28T09:00:00+08:00'}, 'pod_photo_url': null,
+      'direction': direction, 'return_number': returnNumber,
     };
 
 /// A response with a status other than 200.
@@ -162,6 +166,28 @@ void main() {
       expect(api.last('POST', '/courier/offers/3/accept')!.method, 'POST');
       expect(cp.activeJobs.single.id, 7);
       expect(find.text('Job accepted.'), findsOneWidget);
+    }, () => api.client);
+  });
+
+  testWidgets('RID-JOB-006: a rider holding 3 active jobs cannot accept a 4th', (tester) async {
+    final api = FakeApi({
+      'GET /courier/jobs': {
+        'active': [job(id: 1), job(id: 2), job(id: 3)],
+        'recent': [],
+      },
+    });
+    await http.runWithClient(() async {
+      final cp = CourierProvider();
+      await cp.loadJobs();
+      expect(cp.activeJobs, hasLength(3));
+
+      final offer = JobOffer(
+          id: 4, expiresAt: DateTime.now().add(const Duration(seconds: 60)), job: RiderJob.fromJson(job(id: 4)));
+      await pumpApp(tester, api, Scaffold(body: JobOfferCard(offer: offer, cp: cp)), cp: cp);
+
+      expect(find.text('You already have 3 active jobs. Finish one before accepting another.'), findsOneWidget);
+      final accept = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Accept'));
+      expect(accept.onPressed, isNull);
     }, () => api.client);
   });
 
@@ -553,6 +579,109 @@ void main() {
 
       await reopened.syncPending();
       expect(api.sent('POST', '/courier/jobs/9/deliver'), hasLength(3)); // recorded once
+    }, () => api.client);
+  });
+
+  // ── Cross-role: buyer → seller return trips ─────────────────────────────
+
+  testWidgets('A return trip to the seller needs no delivery code and collects no COD', (tester) async {
+    final returned = job(
+      id: 9,
+      type: 'delivery',
+      shipment: 'out_for_delivery',
+      direction: 'reverse',
+      returnNumber: 'RET-000042',
+    );
+    final api = FakeApi({'GET /courier/jobs/9': returned});
+    final parsed = RiderJob.fromJson(returned);
+    expect(parsed.isReturn, isTrue);
+    expect(parsed.collectsCod, isFalse);
+
+    await http.runWithClient(() async {
+      final cp = CourierProvider();
+      await pumpApp(tester, api, const RiderJobScreen(jobId: 9), cp: cp);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Return Delivery'), findsOneWidget);
+      expect(find.text('Deliver back to seller'), findsOneWidget);
+      expect(find.text('Return RET-000042 · Buyer → seller'), findsOneWidget);
+      expect(find.text('No pay for a return trip'), findsOneWidget);
+      // No code to ask the seller for, and nothing to collect
+      expect(find.byKey(const Key('otpField')), findsNothing);
+      expect(find.byKey(const Key('codField')), findsNothing);
+      expect(find.textContaining('there is no delivery code'), findsOneWidget);
+
+      await tester.tap(find.text('Mark as Returned'));
+      await tester.pumpAndSettle();
+      // Only the photo is missing — the code is not asked for
+      expect(find.text('Take a proof-of-delivery photo.'), findsOneWidget);
+    }, () => api.client);
+  });
+
+  testWidgets('A23: what logistics sends the rider shows as notifications and can be marked read', (tester) async {
+    final api = FakeApi({
+      'GET /rider/notifications': {
+        'data': [
+          {
+            'id': 'n1',
+            'data': {
+              'assignment_id': 7,
+              'kind': 'offered',
+              'message': 'New pickup offered to you.',
+            },
+            'read_at': null,
+            'created_at': '2026-10-28T09:00:00+08:00',
+          },
+          {
+            'id': 'n2',
+            'data': {
+              'kind': 'cancelled',
+              'message': 'An assignment was cancelled.',
+            },
+            'read_at': '2026-10-28T08:00:00+08:00',
+            'created_at': '2026-10-28T07:00:00+08:00',
+          },
+        ],
+      },
+      'POST /rider/notifications/read': {'message': 'Notifications marked as read.'},
+    });
+
+    await http.runWithClient(() async {
+      final cp = CourierProvider();
+      await pumpApp(tester, api, const RiderNotificationsScreen(), cp: cp);
+      await tester.pumpAndSettle();
+
+      expect(cp.unreadNotifications, 1);
+      expect(find.text('New pickup offered to you.'), findsOneWidget);
+      expect(find.text('An assignment was cancelled.'), findsOneWidget);
+      expect(find.text('New'), findsOneWidget);
+      expect(find.text('Open job'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('markAllRead')));
+      await tester.pumpAndSettle();
+
+      expect(cp.unreadNotifications, 0);
+      expect(api.sent('POST', '/rider/notifications/read'), hasLength(1));
+    }, () => api.client);
+  });
+
+  test('RID-AVAIL-004: logging out marks an Online rider Offline first', () async {
+    final api = FakeApi({
+      'GET /courier/dashboard': {'is_online': true},
+      'GET /courier/jobs': {'active': [], 'recent': []},
+      'GET /courier/offers': [],
+      'PUT /courier/status': {'online': false},
+    });
+    await http.runWithClient(() async {
+      final cp = CourierProvider();
+      await cp.loadDashboard();
+      expect(cp.isOnline, isTrue);
+
+      await cp.goOffline();
+      expect(cp.isOnline, isFalse);
+      final put = api.last('PUT', '/courier/status');
+      expect(jsonDecode(put!.body), {'online': false});
+      cp.stop();
     }, () => api.client);
   });
 

@@ -7,6 +7,7 @@ import '../core/services/api.dart';
 import '../core/services/location_service.dart';
 import '../core/services/pending_delivery_store.dart';
 import '../models/rider_job.dart';
+import '../models/rider_notification.dart';
 
 class CourierProvider extends ChangeNotifier {
   Map<String, dynamic>? _dashboard;
@@ -17,6 +18,10 @@ class CourierProvider extends ChangeNotifier {
   Map<String, dynamic>? _earnings;
   Map<String, dynamic>? _cod;
   List<PendingDelivery> _pending = [];
+  List<RiderNotification> _notifications = [];
+
+  bool _loadingNotifications = false;
+  String? _notificationError;
 
   bool _loadingDash     = false;
   bool _loadingJobs     = false;
@@ -52,6 +57,11 @@ class CourierProvider extends ChangeNotifier {
   Map<String, dynamic>?  get earnings        => _earnings;
   Map<String, dynamic>?  get cod             => _cod;
   List<PendingDelivery>  get pendingDeliveries => _pending;
+  List<RiderNotification> get notifications   => _notifications;
+  bool                   get loadingNotifications => _loadingNotifications;
+  String?                get notificationError => _notificationError;
+  int                    get unreadNotifications =>
+      _notifications.where((n) => !n.isRead).length;
   bool                   get loadingDash     => _loadingDash;
   bool                   get loadingJobs     => _loadingJobs;
   bool                   get loadingEarnings => _loadingEarnings;
@@ -78,7 +88,7 @@ class CourierProvider extends ChangeNotifier {
       if (_dashboard?['is_online'] != null) {
         _setOnline(_dashboard!['is_online'] as bool);
       }
-      await Future.wait([loadJobs(), loadOffers()]);
+      await Future.wait([loadJobs(), loadOffers(), loadNotifications()]);
     } on ApiError catch (e) { _error = e.message; }
     catch (_) { _error = 'Failed to load dashboard.'; }
     _loadingDash = false; notifyListeners();
@@ -128,7 +138,8 @@ class CourierProvider extends ChangeNotifier {
   }
 
   /// While Online, check in every minute with the position, react at once when location
-  /// is switched off or on, and look for new offers every 5 seconds.
+  /// is switched off or on, and look for new offers every 5 seconds (30s in debug so
+  /// the USB/ADB connection is not hammered during development).
   void _setOnline(bool online) {
     _isOnline = online;
     _heartbeat?.cancel();
@@ -139,8 +150,13 @@ class CourierProvider extends ChangeNotifier {
       _locationProblem = null;
       return;
     }
+    // In debug mode use a slower poll so the USB/ADB link isn't saturated.
+    const pollInterval = kDebugMode
+        ? Duration(seconds: 30)
+        : Duration(seconds: 5);
+
     _heartbeat = Timer.periodic(const Duration(minutes: 1), (_) => _checkIn());
-    _offerPoll = Timer.periodic(const Duration(seconds: 5), (_) => loadOffers());
+    _offerPoll = Timer.periodic(pollInterval, (_) => loadOffers());
     _locationWatch = LocationService.enabledChanges().listen((enabled) {
       if (!enabled) {
         // Tell the server straight away so no new offer is sent (RID-AVAIL-006)
@@ -162,6 +178,20 @@ class CourierProvider extends ChangeNotifier {
       notifyListeners();
     }
     await CourierService.heartbeat(position: reading.position).catchError((_) {});
+    // New assignments and cancellations from logistics show up without a manual refresh
+    unawaited(loadNotifications());
+  }
+
+  /// Logging out ends the shift, so an Online rider is marked Offline first
+  /// (RID-AVAIL-004). Best effort: the phone may be offline or the server slow,
+  /// and neither may keep the rider signed in.
+  Future<void> goOffline() async {
+    if (_isOnline != true) return;
+    try {
+      await CourierService.setOnlineStatus(false)
+          .timeout(const Duration(seconds: 4));
+    } catch (_) {}
+    _isOnline = false;
   }
 
   /// Stops the timers (on logout).
@@ -353,6 +383,37 @@ class CourierProvider extends ChangeNotifier {
         final r = await CourierService.remit(amount);
         _cod = (r['cod'] as Map).cast<String, dynamic>();
       });
+
+  // ── In-app notifications ──────────────────────────────────────────────────
+  /// What logistics and admin sent the rider (A23). A failure here must not
+  /// hide the dashboard, so it has its own message.
+  Future<void> loadNotifications() async {
+    _loadingNotifications = true;
+    _notificationError = null;
+    notifyListeners();
+    try {
+      _notifications = await CourierService.notifications();
+    } on ApiError catch (e) {
+      _notificationError = e.message;
+    } catch (_) {
+      _notificationError = 'Could not load notifications.';
+    }
+    _loadingNotifications = false;
+    notifyListeners();
+  }
+
+  Future<void> markNotificationsRead() async {
+    final unread = unreadNotifications;
+    if (unread == 0) return;
+    try {
+      await CourierService.markNotificationsRead();
+      _notifications = [for (final n in _notifications) n.isRead ? n : n.markedRead()];
+      notifyListeners();
+    } catch (_) {
+      _notificationError = 'Could not mark notifications as read. Try again when you are online.';
+      notifyListeners();
+    }
+  }
 
   // ── Profile ───────────────────────────────────────────────────────────────
   Future<void> loadProfile() async {
