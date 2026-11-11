@@ -55,7 +55,8 @@ void main() {
     final a = _read(_accountsPath)['rider_unverified'] as Map;
     final refused = AuthProvider();
     expect(await refused.login(a['email'] as String, a['password'] as String), isFalse);
-    expect(refused.error, contains('not approved'));
+    // Production: refused by the app's approval gate. With backend fix B2: refused by the server (verify email).
+    expect(refused.error, anyOf(contains('not approved'), contains('verify your email')));
     expect(await const FlutterSecureStorage().read(key: 'auth_token'), isNull);
 
     final auth = await _login('rider1');
