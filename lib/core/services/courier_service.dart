@@ -71,6 +71,13 @@ class CourierService {
   static Future<RiderJob> fail(int id, String reason) async =>
       _job(await Api.post('/courier/jobs/$id/fail', body: {'reason': reason}));
 
+  /// POST /rider/tasks/{id}/reject — the rider gives back a job they have not started.
+  /// The job id is the hub-network task assignment id, the same id /rider/tasks uses.
+  /// The server allows it only before the parcel is collected (AssignmentService::reject):
+  /// a pickup returns to "ready for pickup", a delivery to the hub's sorted queue.
+  static Future<void> declineJob(int id, String reason) =>
+      Api.post('/rider/tasks/$id/reject', body: {'reason': reason});
+
   // ── Earnings and COD ──────────────────────────────────────────────────────
   /// GET /courier/earnings — totals and the job history between [from] and [to]
   static Future<Map<String, dynamic>> earnings({DateTime? from, DateTime? to}) async =>

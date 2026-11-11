@@ -53,6 +53,10 @@ class RiderJob {
   bool get canStartDelivery => isDelivery && isActive && shipmentStatus == 'at_hub';
   bool get canFinishDelivery => isDelivery && isActive && shipmentStatus == 'out_for_delivery';
 
+  /// The rider may give the job back until they hold the parcel: a pickup before it is
+  /// collected from the seller, a delivery before it leaves the hub (AssignmentService::reject).
+  bool get canDecline => canConfirmPickup || canStartDelivery;
+
   /// The stop the rider is heading to now.
   JobStop get destination => isPickup ? pickup : dropoff;
 

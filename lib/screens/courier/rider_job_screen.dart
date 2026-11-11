@@ -110,17 +110,105 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
   }
 
   Future<void> _act(Future<RiderJob?> Function(CourierProvider cp) action, String success) async {
+    // A second tap before the button redraws as disabled must not send the action twice
+    if (_busy) return;
     FocusScope.of(context).unfocus();
     setState(() => _busy = true);
     final cp = context.read<CourierProvider>();
     final job = await action(cp);
     if (!mounted) return;
+    final conflict = job == null && cp.lastErrorWasConflict;
     setState(() {
       _busy = false;
       if (job != null) _job = job;
     });
     showResult(context, job != null, success, cp.error);
+    // The job changed on the server (e.g. already picked up): show what the server has now
+    if (conflict) await _load();
   }
+
+  static const _declineReasons = [
+    'Too far from my area',
+    'Vehicle problem',
+    'Cannot make it in time',
+    'Parcel too big for my vehicle',
+  ];
+
+  /// Gives the job back before the rider holds the parcel; logistics sees the reason.
+  Future<void> _decline(RiderJob job) async {
+    if (_busy) return;
+    String? choice;
+    final other = TextEditingController();
+    final reason = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final text = choice == 'other' ? other.text.trim() : choice;
+          return SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(kSpace16, kSpace16, kSpace16, kSpace16 + MediaQuery.of(ctx).viewInsets.bottom),
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Text("Can't take this job?", style: kHeadingSm.copyWith(color: kTextPrimary)),
+                const SizedBox(height: kSpace4),
+                Text('The job goes back to your logistics company, who will give it to another rider.',
+                    style: kBodySm.copyWith(color: kTextSecondary)),
+                const SizedBox(height: kSpace8),
+                RadioGroup<String>(
+                  groupValue: choice,
+                  onChanged: (v) => setSheet(() => choice = v),
+                  child: Column(children: [
+                    for (final r in _declineReasons) RadioListTile<String>(value: r, title: Text(r)),
+                    const RadioListTile<String>(value: 'other', title: Text('Other reason')),
+                  ]),
+                ),
+                if (choice == 'other')
+                  TextField(
+                    key: const Key('declineOtherField'),
+                    controller: other,
+                    maxLength: 255,
+                    autofocus: true,
+                    onChanged: (_) => setSheet(() {}),
+                    decoration: const InputDecoration(labelText: 'Reason', border: OutlineInputBorder()),
+                  ),
+                const SizedBox(height: kSpace8),
+                ElevatedButton(
+                  key: const Key('declineConfirm'),
+                  onPressed: text == null || text.isEmpty ? null : () => Navigator.pop(ctx, text),
+                  style: ElevatedButton.styleFrom(backgroundColor: kActionDestructive, foregroundColor: Colors.white),
+                  child: const Text('Give back job'),
+                ),
+              ]),
+            ),
+          );
+        },
+      ),
+    );
+    other.dispose();
+    if (reason == null || !mounted) return;
+
+    setState(() => _busy = true);
+    final cp = context.read<CourierProvider>();
+    final ok = await cp.declineJob(job.id, reason);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    showResult(context, ok, 'Job given back to your logistics company.', cp.error);
+    if (ok) {
+      Navigator.of(context).pop();
+    } else if (cp.lastErrorWasConflict) {
+      await _load();
+    }
+  }
+
+  Widget _declineButton(RiderJob job) => Padding(
+        padding: const EdgeInsets.only(top: kSpace8),
+        child: TextButton(
+          key: const Key('declineJob'),
+          onPressed: _busy ? null : () => _decline(job),
+          style: TextButton.styleFrom(foregroundColor: kActionDestructive),
+          child: const Text("Can't take this job"),
+        ),
+      );
 
   // ── External apps ─────────────────────────────────────────────────────────
   Future<void> _open(Uri uri) async {
@@ -400,10 +488,18 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
   }
 
   Widget _actions(RiderJob job) {
-    if (job.canConfirmPickup) return _pickupForm(job);
+    if (job.canConfirmPickup) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _pickupForm(job),
+        _declineButton(job),
+      ]);
+    }
     if (job.canStartDelivery) {
-      return _primary('Start delivery (Out for Delivery)', Icons.local_shipping_outlined,
-          () => _act((cp) => cp.startDelivery(job.id), 'Parcel is out for delivery.'));
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _primary('Start delivery (Out for Delivery)', Icons.local_shipping_outlined,
+            () => _act((cp) => cp.startDelivery(job.id), 'Parcel is out for delivery.')),
+        _declineButton(job),
+      ]);
     }
     if (job.canFinishDelivery) return _deliveryForm(job);
     return Container(
