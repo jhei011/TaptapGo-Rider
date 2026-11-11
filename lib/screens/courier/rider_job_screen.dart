@@ -467,7 +467,13 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
           _row('Your pay', job.status == 'assigned' ? 'No pay for a return trip' : peso(job.earned)),
         ] else ...[
           _row('Payment', job.isCod ? 'COD ${peso(job.codAmount)}' : '${peso(0)} COD · Paid (${job.paymentMethod.toUpperCase()})'),
-          _row('Your pay', job.status == 'assigned' ? '${peso(job.pay)} when done' : peso(job.earned)),
+          // Pay is earned once the order reaches the buyer (RiderJobService::earned), so a
+          // finished pickup shows what is coming instead of ₱0.00
+          _row('Your pay', job.status == 'assigned'
+              ? '${peso(job.pay)} when done'
+              : job.status == 'done' && job.earned == 0 && job.pay > 0
+                  ? '${peso(job.pay)} once the buyer receives the order'
+                  : peso(job.earned)),
         ],
         if (job.result != null) _row('Result', job.result!),
         if (job.failedReason != null) _row('Failed reason', job.failedReason!),
