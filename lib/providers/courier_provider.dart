@@ -37,6 +37,7 @@ class CourierProvider extends ChangeNotifier {
   LocationProblem? _locationProblem;
 
   String? _error;
+  int? _lastErrorStatus;
 
   Timer? _heartbeat;
   Timer? _offerPoll;
@@ -194,7 +195,9 @@ class CourierProvider extends ChangeNotifier {
     _isOnline = false;
   }
 
-  /// Stops the timers (on logout).
+  /// Stops the timers and forgets what was shown (on logout), so the next rider on
+  /// this phone never sees the previous rider's jobs. Deliveries saved offline stay
+  /// on the phone until they are sent.
   void stop() {
     _heartbeat?.cancel();
     _offerPoll?.cancel();
@@ -202,6 +205,15 @@ class CourierProvider extends ChangeNotifier {
     _isOnline = null;
     _locationProblem = null;
     _offers = [];
+    _active = [];
+    _recent = [];
+    _dashboard = null;
+    _profile = null;
+    _earnings = null;
+    _cod = null;
+    _notifications = [];
+    _error = null;
+    notifyListeners();
   }
 
   @override
@@ -364,6 +376,18 @@ class CourierProvider extends ChangeNotifier {
 
   Future<RiderJob?> fail(int id, String reason) => _runJob(() => CourierService.fail(id, reason));
 
+  /// Gives back a job the rider has not started (before pickup / before leaving the hub).
+  /// Logistics sees the reason and gives the parcel to another rider.
+  Future<bool> declineJob(int id, String reason) => _run(() async {
+        await CourierService.declineJob(id, reason.trim());
+        _active = _active.where((j) => j.id != id).toList();
+        await loadJobs();
+      });
+
+  /// The last action was refused because the job changed on the server (HTTP 409),
+  /// e.g. it was already picked up from another phone. The screen reloads the job.
+  bool get lastErrorWasConflict => _lastErrorStatus == 409;
+
   // ── Earnings and COD ──────────────────────────────────────────────────────
   Future<void> loadEarnings({DateTime? from, DateTime? to}) async {
     _loadingEarnings = true; _error = null; notifyListeners();
@@ -435,12 +459,14 @@ class CourierProvider extends ChangeNotifier {
   /// Runs an action and keeps the server's message (or a connection error) in [error].
   Future<bool> _run(Future<void> Function() action) async {
     _error = null;
+    _lastErrorStatus = null;
     try {
       await action();
       notifyListeners();
       return true;
     } on ApiError catch (e) {
       _error = e.message;
+      _lastErrorStatus = e.code;
     } catch (_) {
       _error = 'No internet connection. Nothing was sent — try again when you are back online.';
     }

@@ -64,6 +64,8 @@ class TaptapGoApp extends StatefulWidget {
 }
 
 class _TaptapGoAppState extends State<TaptapGoApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -75,10 +77,13 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
         ChangeNotifierProvider(create: (_) => CourierProvider()),
         ChangeNotifierProvider(create: (_) => ThemeService()),
       ],
-      child: Consumer<ThemeService>(
+      child: ForcedLogoutWatcher(
+        navigatorKey: _navigatorKey,
+        child: Consumer<ThemeService>(
         builder: (context, themeService, _) => Listener(
           onPointerDown: (_) => context.read<AuthProvider>().resetIdleTimer(),
           child: MaterialApp(
+          navigatorKey: _navigatorKey,
           title: 'TaptapGo',
           debugShowCheckedModeBanner: false,
           // Marks every demo screen, so sample data cannot be mistaken for real results
@@ -181,8 +186,50 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
         ),
         ),
       ),
+      ),
     );
   }
+}
+
+/// When the app signs the rider out on its own (expired login, suspended account,
+/// 30 minutes idle), stops the rider's background polling and returns to the login
+/// screen, which shows the reason.
+class ForcedLogoutWatcher extends StatefulWidget {
+  final GlobalKey<NavigatorState> navigatorKey;
+  final Widget child;
+  const ForcedLogoutWatcher({super.key, required this.navigatorKey, required this.child});
+
+  @override
+  State<ForcedLogoutWatcher> createState() => _ForcedLogoutWatcherState();
+}
+
+class _ForcedLogoutWatcherState extends State<ForcedLogoutWatcher> {
+  late final AuthProvider _auth;
+  int _seen = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _auth = context.read<AuthProvider>();
+    _seen = _auth.forcedLogouts;
+    _auth.addListener(_onAuthChanged);
+  }
+
+  void _onAuthChanged() {
+    if (_auth.forcedLogouts == _seen) return;
+    _seen = _auth.forcedLogouts;
+    context.read<CourierProvider>().stop();
+    widget.navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (_) => false);
+  }
+
+  @override
+  void dispose() {
+    _auth.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Boots auth in the background while the new animated splash plays,

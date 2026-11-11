@@ -4,10 +4,11 @@ import '../../models/user.dart';
 
 class AuthService {
   /// POST /login → { token, user }
-  static Future<({String token, User user})> login(String email, String password) async {
+  static Future<({String token, User user, Map<String, dynamic> rawUser})> login(String email, String password) async {
     final d = await Api.post('/login', body: {'email': email, 'password': password}, auth: false)
         as Map<String, dynamic>;
-    return (token: d['token'] as String, user: User.fromJson(d['user'] as Map<String, dynamic>));
+    final raw = (d['user'] as Map).cast<String, dynamic>();
+    return (token: d['token'] as String, user: User.fromJson(raw), rawUser: raw);
   }
 
   /// POST /logout
