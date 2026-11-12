@@ -66,14 +66,13 @@ flutter_launcher_icons:
   android: true
   ios: true
   # Icon sources live in assets/icon/ (not bundled into the app).
-  # Older Android: the rounded scooter icon. iOS: the square version (iOS rounds it itself).
-  # Android 8+: the square version as the adaptive foreground, so every launcher shape is filled.
+  # One square icon everywhere: the scooter at 80% with its teal background continued
+  # around it, so circle / rounded-square launchers and iOS rounding never crop it.
   image_path: "assets/icon/app_icon.png"
-  image_path_ios: "assets/icon/app_icon_ios.png"
   min_sdk_android: 21
   remove_alpha_ios: true
   adaptive_icon_background: "#1CC9B4"
-  adaptive_icon_foreground: "assets/icon/app_icon_ios.png"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
   android_icon_scale: 1.0
   web:
     generate: false
