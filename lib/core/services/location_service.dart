@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:geolocator/geolocator.dart';
 
 /// Why the app has no position for the rider.
@@ -72,7 +73,12 @@ class DeviceLocation implements LocationSource {
     }
     try {
       final p = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 15)));
+          locationSettings: const LocationSettings(
+            accuracy: kDebugMode
+                ? LocationAccuracy.medium
+                : LocationAccuracy.high,
+            timeLimit: Duration(seconds: 15),
+          ));
       return LocationReading.at(RiderPosition(p.latitude, p.longitude));
     } on LocationServiceDisabledException {
       return const LocationReading.unavailable(LocationProblem.serviceOff);

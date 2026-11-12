@@ -27,8 +27,15 @@ class BhStatTile extends StatelessWidget {
     Widget tile = Container(
       decoration: BoxDecoration(
         color: kSurfaceBase,
-        border: Border.all(color: kBorderDefault),
+        border: Border.all(color: kBrand100),
         borderRadius: BorderRadius.circular(kRadiusLg),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0E0E2A38),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(kSpace16),
       child: GestureDetector(

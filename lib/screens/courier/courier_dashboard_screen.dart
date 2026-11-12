@@ -36,9 +36,10 @@ class _CourierDashState extends State<CourierDashboardScreen> {
     return Scaffold(
       backgroundColor: kSurfaceRaised,
       appBar: BhAppBar(
-        title: 'Dashboard',
+        title: BhAppBar.kWordmark,
         showBack: false,
         actions: [
+          _NotificationBell(cp: cp),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -129,6 +130,44 @@ class _CourierDashState extends State<CourierDashboardScreen> {
   }
 }
 
+/// Jobs assigned or cancelled by logistics/admin land here (A23).
+class _NotificationBell extends StatelessWidget {
+  final CourierProvider cp;
+  const _NotificationBell({required this.cp});
+
+  @override
+  Widget build(BuildContext context) {
+    final unread = cp.unreadNotifications;
+    return IconButton(
+      key: const Key('notificationBell'),
+      tooltip: 'Notifications',
+      onPressed: () => Navigator.pushNamed(context, '/courier/notifications'),
+      icon: Stack(clipBehavior: Clip.none, children: [
+        const Icon(Icons.notifications_none),
+        if (unread > 0)
+          Positioned(
+            top: -2,
+            right: -3,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              constraints: const BoxConstraints(minWidth: 15),
+              decoration: BoxDecoration(
+                color: kActionDestructive,
+                borderRadius: BorderRadius.circular(kRadiusFull),
+              ),
+              child: Text(
+                unread > 9 ? '9+' : '$unread',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
 // ── Welcome + Online/Offline Banner ──────────────────────────────────────────
 class _WelcomeBanner extends StatelessWidget {
   final dynamic user;
@@ -148,11 +187,16 @@ class _WelcomeBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(kSpace20),
       decoration: BoxDecoration(
-        color: kBrand800,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0E2A38), Color(0xFF1F4F5C), Color(0xFF4A949C)],
+          stops: [0.0, 0.55, 1.0],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(kRadiusLg),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x220E2A38), blurRadius: 12, offset: Offset(0, 4))
+              color: Color(0x300E2A38), blurRadius: 18, offset: Offset(0, 6))
         ],
       ),
       child: Column(
@@ -176,7 +220,36 @@ class _WelcomeBanner extends StatelessWidget {
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
+                    // TaptapGo wordmark — same style as login screen
+                    RichText(
+                      text: const TextSpan(children: [
+                        TextSpan(
+                          text: 'Taptap',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'Go',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            fontStyle: FontStyle.italic,
+                            color: Color(0xFF8FE0D2),
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' · ',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white54,
+                          ),
+                        ),
+                      ]),
+                    ),
                     Text(company,
                         style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.65),

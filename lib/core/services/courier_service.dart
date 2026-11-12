@@ -2,6 +2,7 @@ import 'dart:io';
 import 'api.dart';
 import 'location_service.dart';
 import '../../models/rider_job.dart';
+import '../../models/rider_notification.dart';
 
 class CourierService {
   // ── Dashboard ────────────────────────────────────────────────────────────
@@ -70,6 +71,13 @@ class CourierService {
   static Future<RiderJob> fail(int id, String reason) async =>
       _job(await Api.post('/courier/jobs/$id/fail', body: {'reason': reason}));
 
+  /// POST /rider/tasks/{id}/reject — the rider gives back a job they have not started.
+  /// The job id is the hub-network task assignment id, the same id /rider/tasks uses.
+  /// The server allows it only before the parcel is collected (AssignmentService::reject):
+  /// a pickup returns to "ready for pickup", a delivery to the hub's sorted queue.
+  static Future<void> declineJob(int id, String reason) =>
+      Api.post('/rider/tasks/$id/reject', body: {'reason': reason});
+
   // ── Earnings and COD ──────────────────────────────────────────────────────
   /// GET /courier/earnings — totals and the job history between [from] and [to]
   static Future<Map<String, dynamic>> earnings({DateTime? from, DateTime? to}) async =>
@@ -101,6 +109,19 @@ class CourierService {
       }, files: {
         if (document != null) 'driver_license_document': document,
       }) as Map<String, dynamic>)['profile'] as Map<String, dynamic>;
+
+  // ── In-app notifications (A23) ────────────────────────────────────────────
+  /// GET /rider/notifications — what logistics and admin sent the rider:
+  /// a new job, a cancelled job, an expired offer.
+  static Future<List<RiderNotification>> notifications() async {
+    final d = await Api.get('/rider/notifications') as Map<String, dynamic>;
+    return (d['data'] as List? ?? [])
+        .map((n) => RiderNotification.fromJson((n as Map).cast<String, dynamic>()))
+        .toList();
+  }
+
+  static Future<void> markNotificationsRead() =>
+      Api.post('/rider/notifications/read');
 
   // ── Rider Activation ──────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> activationInfo(String token) async =>

@@ -152,11 +152,29 @@ class TaptapNavBar extends StatelessWidget implements PreferredSizeWidget {
             )
           : null,
       automaticallyImplyLeading: false,
-      title: Text(title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w800, fontSize: 18,
-            color: Colors.white, letterSpacing: 0.2,
-          )),
+      title: RichText(
+        text: const TextSpan(children: [
+          TextSpan(
+            text: 'Taptap',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: 0.2,
+            ),
+          ),
+          TextSpan(
+            text: 'Go',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              fontStyle: FontStyle.italic,
+              color: Color(0xFFCDEAE7), // C.grad4 — matches TaptapShop "Shop" color
+              letterSpacing: 0.2,
+            ),
+          ),
+        ]),
+      ),
       actions: actions,
       bottom: bottom != null
           ? PreferredSize(

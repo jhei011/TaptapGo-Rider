@@ -1,8 +1,25 @@
+import 'package:flutter/foundation.dart' show kReleaseMode;
+
 class AppConstants {
-  // Physical device: your PC's local IP on the same Wi-Fi as the phone
-  // Run Laravel with: php artisan serve --host=0.0.0.0 --port=8000
-  static const String baseUrl = 'http://192.168.1.39:8000';
+  // Which server the app talks to.
+  //   Release builds (flutter build apk --release / appbundle): the live server,
+  //     https://taptapshop.store, unless API_BASE is given.
+  //   Debug builds: your laptop's local server through the USB cable
+  //     (php artisan serve --host=127.0.0.1 --port=8000, then adb reverse tcp:8000 tcp:8000).
+  // Any other server, without editing this file:
+  //   Same Wi-Fi:   flutter run --dart-define=API_BASE=http://192.168.1.39:8000
+  //   Staging:      flutter build apk --release --dart-define=API_BASE=https://staging.example
+  static const String liveServer = 'https://taptapshop.store';
+  static const String baseUrl = String.fromEnvironment('API_BASE',
+      defaultValue: kReleaseMode ? liveServer : 'http://127.0.0.1:8000');
   static const String apiBase = '$baseUrl/api';
+
+  /// Google sign-in: the OAuth *web* client id of the TaptapShop Google Cloud project
+  /// (the one TaptapShop uses and the backend accepts as token audience,
+  /// ApiGoogleAuthController). Not a secret. Android additionally needs an Android
+  /// OAuth client for com.taptapgo.app + the signing SHA-1 in that same project.
+  static const String googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID',
+      defaultValue: '75167460858-ddqjfmj6tb1kgbecrid5btsvi4lphu4m.apps.googleusercontent.com');
 
   // For Android emulator swap to: 'http://10.0.2.2:8000'
 
@@ -16,7 +33,9 @@ class AppConstants {
 
   static const List<String> orderStatuses = [
     'pending', 'confirmed', 'ready_for_pickup',
+    'awaiting_pickup', 'picked_up', 'at_hub',
     'out_for_delivery', 'delivered', 'cancelled',
+    'failed_delivery', 'return_to_sender',
   ];
 
   static String orderStatusLabel(String s) => const {

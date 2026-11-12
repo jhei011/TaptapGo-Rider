@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_tokens.dart';
+import '../../core/utils/attachment_rules.dart';
+import '../../core/utils/delivery_rules.dart';
 import '../../providers/courier_provider.dart';
 import 'rider_job_widgets.dart';
 
@@ -165,6 +167,12 @@ class RiderVehicleSection extends StatelessWidget {
       ),
     );
     if (save != true || !context.mounted) return;
+    // Today is still valid; yesterday or earlier is refused here as well as on the server
+    final problem = DeliveryRules.licenseExpiryProblem(expiry);
+    if (problem != null) {
+      showResult(context, false, '', problem);
+      return;
+    }
     final ok = await cp.updateLicense(expiry: expiry, document: document);
     if (context.mounted) showResult(context, ok, 'License details saved.', cp.error);
   }
@@ -193,15 +201,30 @@ class DocumentPicker extends StatelessWidget {
   final ValueChanged<File> onPicked;
   const DocumentPicker({super.key, required this.label, required this.file, required this.onPicked});
 
-  Future<void> _camera() async {
+  Future<void> _camera(BuildContext context) async {
     final shot = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 80, maxWidth: 2000);
-    if (shot != null) onPicked(File(shot.path));
+    if (shot == null || !context.mounted) return;
+    await _accept(context, File(shot.path));
   }
 
-  Future<void> _files() async {
+  Future<void> _files(BuildContext context) async {
     final picked = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf']);
     final path = picked?.files.single.path;
-    if (path != null) onPicked(File(path));
+    if (path == null || !context.mounted) return;
+    await _accept(context, File(path));
+  }
+
+  /// JPG, PNG or PDF, checked by the file's content, and at most 5 MB (A16, M7).
+  Future<void> _accept(BuildContext context, File file) async {
+    final problem = await AttachmentRules.validate(file);
+    if (!context.mounted) return;
+    if (problem != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(problem), backgroundColor: kActionDestructive),
+      );
+      return;
+    }
+    onPicked(file);
   }
 
   @override
@@ -226,9 +249,9 @@ class DocumentPicker extends StatelessWidget {
         const SizedBox(height: kSpace6),
       ],
       Row(children: [
-        Expanded(child: OutlinedButton.icon(icon: const Icon(Icons.photo_camera_outlined, size: 16), label: const Text('Take photo'), onPressed: _camera)),
+        Expanded(child: OutlinedButton.icon(icon: const Icon(Icons.photo_camera_outlined, size: 16), label: const Text('Take photo'), onPressed: () => _camera(context))),
         const SizedBox(width: kSpace8),
-        Expanded(child: OutlinedButton.icon(icon: const Icon(Icons.folder_open_outlined, size: 16), label: const Text('Choose file'), onPressed: _files)),
+        Expanded(child: OutlinedButton.icon(icon: const Icon(Icons.folder_open_outlined, size: 16), label: const Text('Choose file'), onPressed: () => _files(context))),
       ]),
     ]);
   }

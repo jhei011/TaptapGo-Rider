@@ -29,8 +29,10 @@ void showResult(BuildContext context, bool ok, String success, String? error) {
 BoxDecoration cardDecoration() => BoxDecoration(
       color: kSurfaceBase,
       borderRadius: BorderRadius.circular(kRadiusLg),
-      border: Border.all(color: kBorderDefault),
-      boxShadow: const [BoxShadow(color: Color(0x060E2A38), blurRadius: 6, offset: Offset(0, 2))],
+      border: Border.all(color: const Color(0xFFD8EFEC)),
+      boxShadow: const [
+        BoxShadow(color: Color(0x120E2A38), blurRadius: 12, offset: Offset(0, 4))
+      ],
     );
 
 // ── Active / completed job card ───────────────────────────────────────────────
@@ -54,12 +56,20 @@ class RiderJobCard extends StatelessWidget {
               Container(
                 width: 38, height: 38,
                 decoration: BoxDecoration(color: kBrand50, borderRadius: BorderRadius.circular(kSpace10)),
-                child: Icon(job.isPickup ? Icons.storefront_outlined : Icons.home_outlined, size: 18, color: kBrand700),
+                child: Icon(
+                    job.isReturn
+                        ? Icons.assignment_return_outlined
+                        : job.isPickup
+                            ? Icons.storefront_outlined
+                            : Icons.home_outlined,
+                    size: 18,
+                    color: kBrand700),
               ),
               const SizedBox(width: kSpace10),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(job.isPickup ? 'Pickup · ${job.trackingNumber}' : 'Delivery · ${job.trackingNumber}',
+                  Text(
+                      '${job.isReturn ? 'Return ' : ''}${job.isPickup ? 'Pickup' : 'Delivery'} · ${job.trackingNumber}',
                       style: kHeadingSm.copyWith(color: kTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
                   Text(job.isDelivery ? 'Attempt ${job.attempt} of ${job.maxAttempts}' : 'Order #${job.orderId}',
                       style: kBodySm.copyWith(color: kTextSecondary)),
@@ -76,7 +86,12 @@ class RiderJobCard extends StatelessWidget {
                     style: kBodySm.copyWith(color: kTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
               const SizedBox(width: kSpace8),
-              Text(job.isCod ? 'COD ${peso(job.codAmount)}' : 'Paid',
+              Text(
+                  job.isReturn
+                      ? 'Return'
+                      : job.isCod
+                          ? 'COD ${peso(job.codAmount)}'
+                          : 'Paid',
                   style: kLabelMd.copyWith(color: kBrand700)),
             ]),
           ]),
@@ -129,6 +144,8 @@ class _JobOfferCardState extends State<JobOfferCard> {
     final job = widget.offer.job;
     final left = widget.offer.secondsLeft();
     final expired = left <= 0;
+    // A rider holds at most 3 active jobs (A14, RID-JOB-006)
+    final atLimit = widget.cp.activeJobs.length >= 3;
 
     return Container(
       margin: const EdgeInsets.only(bottom: kSpace10),
@@ -137,7 +154,12 @@ class _JobOfferCardState extends State<JobOfferCard> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Expanded(
-            child: Text(job.isPickup ? 'New pickup job' : 'New delivery job',
+            child: Text(
+                job.isReturn
+                    ? 'New return job (buyer → seller)'
+                    : job.isPickup
+                        ? 'New pickup job'
+                        : 'New delivery job',
                 style: kHeadingSm.copyWith(color: kTextPrimary)),
           ),
           Container(
@@ -153,13 +175,15 @@ class _JobOfferCardState extends State<JobOfferCard> {
         const SizedBox(height: kSpace10),
         _line(Icons.storefront_outlined, 'Pickup', '${job.pickup.name} · ${job.pickup.area}'),
         _line(Icons.home_outlined, 'Drop-off', job.dropoff.area),
-        _line(Icons.payments_outlined, 'COD', job.isCod ? peso(job.codAmount) : 'None (prepaid)'),
-        _line(Icons.account_balance_wallet_outlined, 'Pay', '${peso(job.pay)} ${job.isPickup ? 'pickup' : 'delivery'}'),
+        _line(Icons.payments_outlined, 'COD',
+            job.isReturn ? 'None (return)' : job.isCod ? peso(job.codAmount) : 'None (prepaid)'),
+        _line(Icons.account_balance_wallet_outlined, 'Pay',
+            job.isReturn ? 'No pay for a return trip' : '${peso(job.pay)} ${job.isPickup ? 'pickup' : 'delivery'}'),
         const SizedBox(height: kSpace12),
         Row(children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: _busy || expired ? null : () => _respond(false),
+              onPressed: _busy || expired || atLimit ? null : () => _respond(false),
               style: OutlinedButton.styleFrom(foregroundColor: kTextSecondary, side: const BorderSide(color: kBorderDefault)),
               child: const Text('Decline'),
             ),
@@ -167,12 +191,17 @@ class _JobOfferCardState extends State<JobOfferCard> {
           const SizedBox(width: kSpace10),
           Expanded(
             child: ElevatedButton(
-              onPressed: _busy || expired ? null : () => _respond(true),
+              onPressed: _busy || expired || atLimit ? null : () => _respond(true),
               style: ElevatedButton.styleFrom(backgroundColor: kBrand600, foregroundColor: Colors.white, elevation: 0),
               child: const Text('Accept'),
             ),
           ),
         ]),
+        if (atLimit) ...[
+          const SizedBox(height: kSpace8),
+          Text('You already have 3 active jobs. Finish one before accepting another.',
+              style: kBodySm.copyWith(color: kStatusPendingFg)),
+        ],
       ]),
     );
   }

@@ -172,6 +172,26 @@ class _CourierProfileState extends State<CourierProfileScreen> {
               ),
               const SizedBox(height: kSpace12),
 
+              // ── The logistics company that manages this rider ─────────────
+              FieldCard(
+                title: 'Logistics Company',
+                titleIcon: Icons.local_shipping_outlined,
+                children: [
+                  Text(
+                    cp.profile?['logistics_company'] as String? ?? '—',
+                    style: kLabelMd.copyWith(color: kTextPrimary),
+                  ),
+                  const SizedBox(height: kSpace6),
+                  Text(
+                    'Your account, documents, remittances and any account changes are handled '
+                    'by this company — contact them if your account is suspended or your '
+                    'details need re-verification.',
+                    style: kBodySm.copyWith(color: kTextSecondary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: kSpace12),
+
               // ── Rider, vehicle and documents ──────────────────────────────
               RiderVehicleSection(cp: cp),
               const SizedBox(height: kSpace20),
@@ -298,7 +318,10 @@ class _CourierProfileState extends State<CourierProfileScreen> {
       ),
     );
     if (ok == true && ctx.mounted) {
-      ctx.read<CourierProvider>().stop();
+      final cp = ctx.read<CourierProvider>();
+      // Leave the shift Offline so dispatch does not send offers to a logged-out rider
+      await cp.goOffline();
+      cp.stop();
       await auth.logout();
       if (ctx.mounted) {
         Navigator.pushNamedAndRemoveUntil(ctx, '/login', (_) => false);

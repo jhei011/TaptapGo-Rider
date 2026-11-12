@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-002",
+  "type": "implement",
+  "description": "Implement 30-minute rider idle logout in the Flutter app (courier and linehaul roles only; buyers and sellers must NOT be affected) and clean up the stale `orderStatuses` list in app_constants.dart. These two Flutter changes are independent of FEAT-001's Laravel changes.",
+  "status": "completed",
+  "steps": [
+    "Open `c:\\Users\\emjhe\\TaptapShop\\TaptapGo\\lib\\providers\\auth_provider.dart`. Add `import 'dart:async';` at the top (if not already present). Add two private fields inside the class body: `static const _riderIdleTimeout = Duration(minutes: 30);` and `Timer? _idleTimer;`.",
+    "In `auth_provider.dart`, add the `resetIdleTimer()` method: `void resetIdleTimer() { final role = _user?.role; if (role != 'courier' && role != 'linehaul') return; _idleTimer?.cancel(); _idleTimer = Timer(_riderIdleTimeout, _idleLogout); }`. Add the private `_idleLogout()` method: `Future<void> _idleLogout() async { _idleTimer = null; if (_status != AuthStatus.authenticated) return; final role = _user?.role; if (role != 'courier' && role != 'linehaul') return; await logout(); }`.",
+    "In `auth_provider.dart`, inside the existing `logout()` method, add `_idleTimer?.cancel(); _idleTimer = null;` as the first two lines of the method body (before the `await AuthService.logout()` call) so the timer is always stopped on logout.",
+    "In `auth_provider.dart`, inside `login()`, after the line `_status = AuthStatus.authenticated;` add `resetIdleTimer();`. Inside `boot()`, after the line `_status = AuthStatus.authenticated;` add `resetIdleTimer();`. This starts the idle countdown as soon as the session is established.",
+    "Open `c:\\Users\\emjhe\\TaptapShop\\TaptapGo\\lib\\main.dart`. Inside `_TaptapGoAppState.build()`, inside the `Consumer<ThemeService>` builder, wrap the `MaterialApp(…)` widget with a `Listener` that calls `resetIdleTimer()` on any pointer-down event: `child: Listener(onPointerDown: (_) => context.read<AuthProvider>().resetIdleTimer(), child: MaterialApp(…),),`. The `Listener` must be a direct parent of `MaterialApp`, not inside any route. Keep all existing `MaterialApp` parameters unchanged.",
+    "Open `c:\\Users\\emjhe\\TaptapShop\\TaptapGo\\lib\\core\\constants\\app_constants.dart`. Replace the `orderStatuses` list with: `static const List<String> orderStatuses = ['pending', 'confirmed', 'ready_for_pickup', 'awaiting_pickup', 'picked_up', 'at_hub', 'out_for_delivery', 'delivered', 'cancelled', 'failed_delivery', 'return_to_sender',];`. Do not change `orderStatusLabel()` — it already maps all of these correctly."
+  ],
+  "acceptance_criteria": [
+    "Running `flutter analyze` produces no errors or warnings on the changed files.",
+    "A widget test: create an `AuthProvider`, set `_user` to a mock `User` with role `courier` and `_status` to `AuthStatus.authenticated`, call `resetIdleTimer()`, fast-forward a fake timer by 31 minutes, assert `status == AuthStatus.unauthenticated`.",
+    "A widget test: same setup but with role `buyer` — after 31 minutes idle status is still `AuthStatus.authenticated` (timer never fires for buyer).",
+    "`orderStatuses` contains all 11 status strings listed in the step above.",
+    "The `Listener` wrapper in `main.dart` calls `AuthProvider.resetIdleTimer()` — confirmed by reading the file after the change."
+  ],
+  "verification": [
+    "Run `flutter analyze` from `c:\\Users\\emjhe\\TaptapShop\\TaptapGo\\` — no errors.",
+    "Run `flutter test` from `c:\\Users\\emjhe\\TaptapShop\\TaptapGo\\` — all tests pass."
+  ],
+  "blocked_reason": null,
+  "findings": "All changes implemented and verified. flutter analyze: 3 pre-existing info-level hints in taptapgo_splash_new.dart (prefer_const_constructors) — none in changed files. flutter test: 49/49 passed. The Listener wrapper is a direct parent of MaterialApp inside the Consumer<ThemeService> builder. resetIdleTimer() is a no-op for buyer/seller/unknown roles (early-return guard). logout() always cancels the timer regardless of role, preventing any dangling timer. orderStatuses updated from 6 to 11 statuses: added awaiting_pickup, picked_up, at_hub, failed_delivery, return_to_sender."
+}
