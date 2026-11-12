@@ -312,7 +312,15 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 14),
 
             // ── Remember me + Forgot password ──────────────────────────────
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            // Wraps "Forgot password?" onto its own line on small screens or large text
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
               GestureDetector(
                 onTap: () =>
                     setState(() => _rememberMe = !_rememberMe),
@@ -347,6 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Color(0xFF1F5F66))),
               ),
             ]),
+            ),
             const SizedBox(height: 22),
 
             // ── LOG IN button ──────────────────────────────────────────────
