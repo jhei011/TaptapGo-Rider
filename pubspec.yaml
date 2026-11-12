@@ -65,11 +65,15 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/taptapgo_logo_text.png"
+  # Icon sources live in assets/icon/ (not bundled into the app).
+  # Older Android: the rounded scooter icon. iOS: the square version (iOS rounds it itself).
+  # Android 8+: the square version as the adaptive foreground, so every launcher shape is filled.
+  image_path: "assets/icon/app_icon.png"
+  image_path_ios: "assets/icon/app_icon_ios.png"
   min_sdk_android: 21
   remove_alpha_ios: true
-  adaptive_icon_background: "#0E2A38"
-  adaptive_icon_foreground: "assets/images/taptapgo_logo_text.png"
+  adaptive_icon_background: "#1CC9B4"
+  adaptive_icon_foreground: "assets/icon/app_icon_ios.png"
   android_icon_scale: 1.0
   web:
     generate: false

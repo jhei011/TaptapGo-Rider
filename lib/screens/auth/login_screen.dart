@@ -178,9 +178,11 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Row(
           children: [
             Image.asset(
-              'assets/images/taptapgo_logo_text.png',
+              'assets/images/taptapgo_app_icon.png',
               height: 36,
+              width: 36,
               fit: BoxFit.contain,
+              filterQuality: FilterQuality.medium,
             ),
             const SizedBox(width: 10),
             RichText(

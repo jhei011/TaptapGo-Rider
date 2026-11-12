@@ -215,7 +215,7 @@ class _RegSellerState extends State<RegisterSellerScreen> {
         automaticallyImplyLeading: false,
         titleSpacing: 20,
         title: Row(mainAxisSize: MainAxisSize.min, children: [
-          Image.asset('assets/images/taptapgo-logo.png', width: 31, height: 31),
+          Image.asset('assets/images/taptapgo_app_icon.png', width: 31, height: 31),
           const SizedBox(width: 8),
           RichText(text: const TextSpan(children: [
             TextSpan(text: 'Taptap', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0E2A38))),

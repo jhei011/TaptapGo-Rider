@@ -98,12 +98,11 @@ class _TapTapGoSplashScreenState extends State<TapTapGoSplashScreen>
                 Text.rich(
                   TextSpan(
                     children: [
-                      TextSpan(text: 'Tap'),
+                      TextSpan(text: 'TapTap'),
                       TextSpan(
-                        text: 'Tap',
+                        text: 'Go',
                         style: TextStyle(color: Color(0xFF9DFBE3)),
                       ),
-                      TextSpan(text: 'Go'),
                     ],
                   ),
                   textAlign: TextAlign.center,

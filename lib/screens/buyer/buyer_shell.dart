@@ -242,7 +242,7 @@ class _CategoryDrawerState extends State<_CategoryDrawer> {
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Image.asset('assets/images/taptapgo-logo.png',
+              Image.asset('assets/images/taptapgo_app_icon.png',
                   width: 30, height: 30),
               const SizedBox(width: 8),
               RichText(text: const TextSpan(children: [

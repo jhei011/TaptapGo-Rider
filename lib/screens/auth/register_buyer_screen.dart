@@ -214,7 +214,7 @@ class _RegBuyerState extends State<RegisterBuyerScreen> {
         automaticallyImplyLeading: false,
         titleSpacing: 20,
         title: Row(mainAxisSize: MainAxisSize.min, children: [
-          Image.asset('assets/images/taptapgo-logo.png', width: 31, height: 31),
+          Image.asset('assets/images/taptapgo_app_icon.png', width: 31, height: 31),
           const SizedBox(width: 8),
           RichText(text: const TextSpan(children: [
             TextSpan(text: 'Taptap',

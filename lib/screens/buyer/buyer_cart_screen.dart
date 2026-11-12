@@ -26,7 +26,7 @@ class BuyerCartScreen extends StatelessWidget {
           onTap: () => Navigator.pushNamedAndRemoveUntil(
               context, '/buyer', (_) => false),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Image.asset('assets/images/taptapgo-logo.png',
+            Image.asset('assets/images/taptapgo_app_icon.png',
                 width: 31, height: 31),
             const SizedBox(width: 7),
             RichText(

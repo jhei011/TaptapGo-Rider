@@ -130,7 +130,7 @@ class _SellerDrawer extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
               child: Row(children: [
-                Image.asset('assets/images/taptapgo-logo.png',
+                Image.asset('assets/images/taptapgo_app_icon.png',
                     width: 42, height: 42),
                 const SizedBox(width: 10),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
