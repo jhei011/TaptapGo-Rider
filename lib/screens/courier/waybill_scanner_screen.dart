@@ -214,7 +214,10 @@ class _WaybillScannerScreenState extends State<WaybillScannerScreen> {
               ),
             ),
             const SizedBox(width: kSpace8),
+            // The app theme makes buttons full width (minimumSize: infinity); beside the text
+            // field that is an unbounded width, which made the whole scanner screen fail to draw.
             ElevatedButton(
+              style: ElevatedButton.styleFrom(minimumSize: const Size(88, 48)),
               onPressed: _busy ? null : () => _submit(_typed.text),
               child: Text(widget.confirmPickups ? 'Confirm' : 'Use'),
             ),

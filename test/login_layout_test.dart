@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taptap_go/core/theme/app_theme.dart';
 import 'package:taptap_go/providers/auth_provider.dart';
 import 'package:taptap_go/screens/auth/login_screen.dart';
 
@@ -15,7 +16,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(ChangeNotifierProvider(
       create: (_) => AuthProvider(),
-      child: const MaterialApp(home: LoginScreen()),
+      child: MaterialApp(theme: AppTheme.light, home: const LoginScreen()),
     ));
     await tester.pump();
     expect(tester.takeException(), isNull, reason: 'no overflow');

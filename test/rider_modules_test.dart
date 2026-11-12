@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taptap_go/core/theme/app_theme.dart';
 import 'package:taptap_go/core/services/location_service.dart';
 import 'package:taptap_go/core/services/pending_delivery_store.dart';
 import 'package:taptap_go/models/rider_job.dart';
@@ -91,7 +92,7 @@ Future<void> pumpApp(WidgetTester tester, FakeApi api, Widget child, {CourierPro
   final provider = cp ?? CourierProvider();
   await tester.pumpWidget(ChangeNotifierProvider.value(
     value: provider,
-    child: MaterialApp(
+    child: MaterialApp(theme: AppTheme.light,
       // The test font draws every glyph as a full square; keep rows within the screen width
       builder: (context, w) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(0.8)),

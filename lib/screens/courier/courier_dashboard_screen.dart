@@ -321,18 +321,22 @@ class _WelcomeBanner extends StatelessWidget {
                       ),
                     ),
                   const SizedBox(width: kSpace8),
-                  Text(
-                    isToggling
-                        ? 'Updating...'
-                        : isOnline
-                            ? 'Online — Ready to Deliver'
-                            : 'Offline — Go Online to Accept Parcels',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
+                  // Takes the room left beside the switch and wraps with large text / display
+                  // size instead of overflowing past it
+                  Expanded(
+                    child: Text(
+                      isToggling
+                          ? 'Updating...'
+                          : isOnline
+                              ? 'Online — Ready to Deliver'
+                              : 'Offline — Go Online to Accept Parcels',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
+                    ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: kSpace8),
                   _OnlineSwitch(isOnline: isOnline),
                 ],
               ),

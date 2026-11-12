@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
+import 'package:taptap_go/core/theme/app_theme.dart';
 import 'package:taptap_go/providers/auth_provider.dart';
 import 'package:taptap_go/screens/linehaul/linehaul_home_screen.dart';
 
@@ -37,7 +38,7 @@ void main() {
     await http.runWithClient(() async {
       await tester.pumpWidget(ChangeNotifierProvider(
         create: (_) => AuthProvider(),
-        child: MaterialApp(
+        child: MaterialApp(theme: AppTheme.light,
           routes: {'/login': (_) => const Scaffold(body: Text('Login screen'))},
           home: const LinehaulHomeScreen(),
         ),
