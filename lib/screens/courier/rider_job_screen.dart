@@ -8,6 +8,7 @@ import '../../core/services/pending_delivery_store.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../core/utils/attachment_rules.dart';
 import '../../core/utils/delivery_rules.dart';
+import '../../core/utils/waybill_code.dart';
 import '../../models/rider_job.dart';
 import '../../providers/courier_provider.dart';
 import '../../widgets/bh_app_bar.dart';
@@ -105,8 +106,10 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
       _trackingFocus.requestFocus();
       return;
     }
-    _tracking.text = code;
-    await _act((cp) => cp.confirmPickup(job.id, code), 'Parcel picked up.');
+    // The seller's waybill QR is a link to the order; show the tracking number it stands for
+    final scanned = WaybillCode.parse(code);
+    _tracking.text = scanned.isOrderLink && scanned.orderId == job.orderId ? job.trackingNumber : code.trim();
+    await _act((cp) => cp.confirmPickupWithCode(job, code), 'Parcel picked up.');
   }
 
   Future<void> _act(Future<RiderJob?> Function(CourierProvider cp) action, String success) async {
@@ -549,7 +552,7 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
                 showResult(context, false, '', 'Type the tracking number on the waybill.');
                 return;
               }
-              _act((cp) => cp.confirmPickup(job.id, _tracking.text), 'Parcel picked up.');
+              _act((cp) => cp.confirmPickupWithCode(job, _tracking.text), 'Parcel picked up.');
             },
           ),
         ]),

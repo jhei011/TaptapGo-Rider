@@ -6,6 +6,7 @@ import '../core/services/courier_service.dart';
 import '../core/services/api.dart';
 import '../core/services/location_service.dart';
 import '../core/services/pending_delivery_store.dart';
+import '../core/utils/waybill_code.dart';
 import '../models/rider_job.dart';
 import '../models/rider_notification.dart';
 
@@ -265,14 +266,39 @@ class CourierProvider extends ChangeNotifier {
   Future<RiderJob?> confirmPickup(int id, String trackingNumber) =>
       _runJob(() => CourierService.confirmPickup(id, trackingNumber.trim()));
 
+  /// Confirms [job]'s pickup with a scanned or typed code: the tracking-number barcode, or the
+  /// QR link on the seller's waybill (…/orders/{id}), which is turned into the job's tracking
+  /// number when it is for this job's order. A link for another order is refused here,
+  /// without asking the server.
+  Future<RiderJob?> confirmPickupWithCode(RiderJob job, String code) {
+    final scanned = WaybillCode.parse(code);
+    if (scanned.isOrderLink) {
+      if (scanned.orderId != job.orderId) {
+        _error = 'This waybill is for order #${scanned.orderId}, not this job (order #${job.orderId}).';
+        notifyListeners();
+        return Future.value(null);
+      }
+      return confirmPickup(job.id, job.trackingNumber);
+    }
+    return confirmPickup(job.id, scanned.trackingNumber!);
+  }
+
   /// A waybill scanned from the Scan tab: confirms the pickup of the job with that
-  /// tracking number. Scanning a parcel that is already picked up gets the server's
-  /// "already picked up" answer (RID-PICK-002, RID-PICK-005). Returns the picked-up job, or null with [error] set.
+  /// tracking number, or of the job for the order in a seller-waybill QR link. Scanning a
+  /// parcel that is already picked up gets the server's "already picked up" answer
+  /// (RID-PICK-002, RID-PICK-005). Returns the picked-up job, or null with [error] set.
   Future<RiderJob?> pickupByScan(String code) async {
-    final tracking = code.trim().toUpperCase();
+    final scanned = WaybillCode.parse(code);
     RiderJob? find() {
-      for (final j in [..._active, ..._recent]) {
-        if (j.isPickup && j.trackingNumber.toUpperCase() == tracking) return j;
+      final jobs = [..._active, ..._recent].where((j) => j.isPickup);
+      if (scanned.isOrderLink) {
+        // Several pickups can share an order (a re-assigned or returned parcel): the open one first
+        final forOrder = jobs.where((j) => j.orderId == scanned.orderId).toList();
+        if (forOrder.isEmpty) return null;
+        return forOrder.firstWhere((j) => j.status == 'assigned', orElse: () => forOrder.first);
+      }
+      for (final j in jobs) {
+        if (j.trackingNumber.toUpperCase() == scanned.trackingNumber) return j;
       }
       return null;
     }
@@ -283,11 +309,13 @@ class CourierProvider extends ChangeNotifier {
       job = find();
     }
     if (job == null) {
-      _error = 'None of your pickup jobs has tracking number $tracking.';
+      _error = scanned.isOrderLink
+          ? 'None of your pickup jobs is for order #${scanned.orderId}.'
+          : 'None of your pickup jobs has tracking number ${scanned.trackingNumber}.';
       notifyListeners();
       return null;
     }
-    return confirmPickup(job.id, tracking);
+    return confirmPickup(job.id, job.trackingNumber);
   }
 
   Future<RiderJob?> startDelivery(int id) => _runJob(() => CourierService.startDelivery(id));
