@@ -85,7 +85,10 @@ class DemoApi {
     final job = RegExp(r'^/courier/jobs/(\d+)').firstMatch(path);
     final offer = RegExp(r'^/courier/offers/(\d+)/(accept|decline)$').firstMatch(path);
 
+    final trip = RegExp(r'^/linehaul/trips/(\d+)(?:/(depart|arrive))?$').firstMatch(path);
+
     if (offer != null) return _respondToOffer(int.parse(offer.group(1)!), offer.group(2)!);
+    if (trip != null) return _tripAction(int.parse(trip.group(1)!), trip.group(2));
     if (job != null) return _jobAction(request, int.parse(job.group(1)!), path);
 
     return switch (route) {
@@ -103,7 +106,10 @@ class DemoApi {
       'GET /courier/profile' => _Reply(_profile),
       'GET /rider/notifications' => _Reply({'data': _notifications}),
       'POST /rider/notifications/read' => _readNotifications(),
-      'GET /linehaul/home' => _Reply(_linehaulHome),
+      'GET /linehaul/home' => _Reply({..._linehaulHome, 'duty_status': _dutyStatus}),
+      'GET /linehaul/trips' => _Reply(request.url.queryParameters['scope'] == 'history'
+          ? _trips.where((t) => t['status'] == 'closed').toList()
+          : _trips.where((t) => t['status'] != 'closed').toList()),
       _ => _Reply({'message': 'This is not available in the demo.'}, 404),
     };
   }
@@ -232,6 +238,60 @@ class DemoApi {
       'or_cr': {'name': 'or_cr.pdf', 'url': 'https://example.com/demo-document'},
     },
   };
+
+  // ── Linehaul courier trips (hub to hub) ──
+  late final List<Map<String, dynamic>> _trips = [
+    _trip(21, 'LH-261113-QCBUL', 'draft', ['TRK-2001001', 'TRK-2001002', 'TRK-2001003'], [2.5, 4, 1.2]),
+    _trip(20, 'LH-261112-QCPAM', 'closed', ['TRK-1999001', 'TRK-1999002'], [3, 5.5],
+        dest: {'id': 3, 'code': 'HUB-PAM', 'name': 'Bilis Hatid Pampanga Hub'}, daysAgo: 1),
+  ];
+
+  String get _dutyStatus {
+    final open = _trips.where((t) => t['status'] != 'closed').map((t) => t['status']);
+    if (open.any((s) => s == 'dispatched' || s == 'receiving')) return 'On Trip';
+    if (open.contains('draft')) return 'Loading';
+    return 'Off Duty';
+  }
+
+  static Map<String, dynamic> _trip(int id, String code, String status, List<String> tracking, List<double> kg,
+      {Map<String, dynamic>? dest, int daysAgo = 0}) {
+    final created = DateTime.now().subtract(Duration(days: daysAgo, hours: 2)).toUtc();
+    final closed = status == 'closed';
+    return {
+      'id': id, 'code': code, 'status': status,
+      'status_label': closed ? 'Completed' : 'Loading',
+      'origin': {'id': 1, 'code': 'HUB-QC', 'name': 'Bilis Hatid QC First-Mile Hub'},
+      'destination': dest ?? {'id': 2, 'code': 'HUB-BUL', 'name': 'Bilis Hatid Bulacan Hub'},
+      'vehicle_plate': 'NAB4521',
+      'parcel_count': tracking.length,
+      'received_count': closed ? tracking.length : 0,
+      'total_weight_kg': kg.fold<double>(0, (a, b) => a + b),
+      'can_depart': status == 'draft', 'can_arrive': false,
+      'created_at': created.toIso8601String(),
+      'dispatched_at': closed ? created.add(const Duration(minutes: 20)).toIso8601String() : null,
+      'arrived_at': closed ? created.add(const Duration(hours: 1)).toIso8601String() : null,
+      'closed_at': closed ? created.add(const Duration(hours: 1, minutes: 15)).toIso8601String() : null,
+      'parcels': [
+        for (var i = 0; i < tracking.length; i++)
+          {'tracking_number': tracking[i], 'weight_kg': kg[i], 'received': closed, 'received_at': null},
+      ],
+    };
+  }
+
+  _Reply _tripAction(int id, String? action) {
+    final trip = _trips.where((t) => t['id'] == id).firstOrNull;
+    if (trip == null) return _Reply({'message': 'Not found.'}, 404);
+    if (action == null) return _Reply(trip);
+    final now = DateTime.now().toUtc().toIso8601String();
+    if (action == 'depart') {
+      if (trip['status'] != 'draft') return _Reply({'message': 'Trip ${trip['code']} has already started.'}, 409);
+      trip.addAll({'status': 'dispatched', 'status_label': 'On the road', 'dispatched_at': now, 'can_depart': false, 'can_arrive': true});
+      return _Reply({'message': 'Trip ${trip['code']} started. Drive safely.', 'trip': trip});
+    }
+    if (trip['status'] != 'dispatched') return _Reply({'message': 'Start trip ${trip['code']} before arriving.'}, 409);
+    trip.addAll({'status': 'receiving', 'status_label': 'Unloading', 'arrived_at': now, 'can_arrive': false});
+    return _Reply({'message': 'Arrived at ${(trip['destination'] as Map)['code']}. The hub will receive the parcels.', 'trip': trip});
+  }
 
   static const _linehaulHome = {
     'name': 'Ernesto Villareal', 'email': 'ernesto.villareal@example.com',

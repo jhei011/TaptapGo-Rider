@@ -8,6 +8,7 @@ import '../../widgets/bh_skeleton.dart';
 import '../../widgets/bh_offline_banner.dart';
 import '../../widgets/bh_empty_state.dart';
 import 'rider_job_widgets.dart';
+import '../../widgets/reveal.dart';
 
 /// My Jobs: active pickup and delivery jobs, and recently finished ones.
 class CourierOrdersScreen extends StatefulWidget {
@@ -48,7 +49,7 @@ class _CourierOrdersState extends State<CourierOrdersScreen> {
 
     return Scaffold(
       backgroundColor: kSurfaceRaised,
-      appBar: const BhAppBar(title: 'My Jobs', showBack: false),
+      appBar: const BhAppBar(title: 'My Jobs', subtitle: 'Pickups and deliveries assigned to you', showBack: false),
       body: BhOfflineBanner(
         child: cp.loadingJobs && cp.activeJobs.isEmpty && cp.recentJobs.isEmpty
             ? const Padding(
@@ -80,7 +81,7 @@ class _CourierOrdersState extends State<CourierOrdersScreen> {
                           : ListView.builder(
                               padding: const EdgeInsets.fromLTRB(kSpace14, kSpace14, kSpace14, 80),
                               itemCount: jobs.length,
-                              itemBuilder: (_, i) => RiderJobCard(job: jobs[i]),
+                              itemBuilder: (_, i) => Reveal(key: ValueKey('job-${jobs[i].id}'), index: i, child: RiderJobCard(job: jobs[i])),
                             ),
                     ),
                   ),

@@ -241,7 +241,7 @@ class CameraUnavailable extends StatelessWidget {
             padding: const EdgeInsets.all(kSpace24),
             child:
                 Column(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.no_photography_outlined,
+              Icon(Icons.no_photography_outlined,
                   size: 48, color: kTextMuted),
               const SizedBox(height: kSpace12),
               Text(

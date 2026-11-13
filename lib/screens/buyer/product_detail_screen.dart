@@ -107,9 +107,9 @@ class _ProdDetailState extends State<ProductDetailScreen> {
                     imageUrl: p.image!,
                     fit: BoxFit.cover,
                     placeholder: (_, __) => Container(color: C.b50),
-                    errorWidget: (_, __, ___) => Container(color: C.b50, child: const Icon(Icons.image_outlined, color: C.b200, size: 64)),
+                    errorWidget: (_, __, ___) => Container(color: C.b50, child: Icon(Icons.image_outlined, color: C.b200, size: 64)),
                   )
-                : Container(color: C.b50, child: const Icon(Icons.image_outlined, color: C.b200, size: 64)),
+                : Container(color: C.b50, child: Icon(Icons.image_outlined, color: C.b200, size: 64)),
           ),
 
           Padding(
@@ -121,13 +121,13 @@ class _ProdDetailState extends State<ProductDetailScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(color: C.b50, borderRadius: BorderRadius.circular(20)),
                   child: Text(p.category!.name,
-                      style: const TextStyle(fontSize: 11, color: C.b700, fontWeight: FontWeight.w700)),
+                      style: TextStyle(fontSize: 11, color: C.b700, fontWeight: FontWeight.w700)),
                 ),
               const SizedBox(height: 10),
 
               // Name
               Text(p.name,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: C.textPrimary)),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: C.textPrimary)),
               const SizedBox(height: 4),
 
               // Seller
@@ -135,13 +135,13 @@ class _ProdDetailState extends State<ProductDetailScreen> {
                 const Icon(Icons.store_outlined, size: 14, color: C.b600),
                 const SizedBox(width: 4),
                 Text('Sold by ${p.seller!.name}',
-                    style: const TextStyle(fontSize: 12, color: C.textSecondary)),
+                    style: TextStyle(fontSize: 12, color: C.textSecondary)),
               ]),
               const SizedBox(height: 10),
 
               // Price
               Text('₱${p.price.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: C.b700)),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: C.b700)),
               const SizedBox(height: 6),
 
               // Stock
@@ -163,18 +163,18 @@ class _ProdDetailState extends State<ProductDetailScreen> {
               const Divider(height: 24),
 
               // Description
-              const Text('Description',
+              Text('Description',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: C.textPrimary)),
               const SizedBox(height: 6),
               Text(
                 p.description?.isNotEmpty == true ? p.description! : 'No description provided.',
-                style: const TextStyle(fontSize: 14, color: C.textSecondary, height: 1.55),
+                style: TextStyle(fontSize: 14, color: C.textSecondary, height: 1.55),
               ),
 
               if (p.inStock) ...[
                 const Divider(height: 24),
                 // Quantity
-                const Text('Quantity',
+                Text('Quantity',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: C.textPrimary)),
                 const SizedBox(height: 10),
                 Row(children: [
@@ -187,7 +187,7 @@ class _ProdDetailState extends State<ProductDetailScreen> {
                   _qtyBtn(Icons.add_rounded, () { if (_qty < p.stock) setState(() => _qty++); }),
                   const SizedBox(width: 12),
                   Text('max ${p.stock}',
-                      style: const TextStyle(fontSize: 12, color: C.textMuted)),
+                      style: TextStyle(fontSize: 12, color: C.textMuted)),
                 ]),
                 const SizedBox(height: 18),
 
@@ -235,7 +235,7 @@ class _ProdDetailState extends State<ProductDetailScreen> {
                       label: const Text('Message Seller'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: C.textSecondary,
-                        side: const BorderSide(color: C.border),
+                        side: BorderSide(color: C.border),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10)),
@@ -249,8 +249,8 @@ class _ProdDetailState extends State<ProductDetailScreen> {
 
           // Related products
           if (_related.isNotEmpty) ...[
-            const Padding(
-              padding: EdgeInsets.fromLTRB(18, 0, 18, 10),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
               child: Text('Related Products',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: C.textPrimary)),
             ),
@@ -279,7 +279,7 @@ class _ProdDetailState extends State<ProductDetailScreen> {
                             child: rp.image != null
                                 ? CachedNetworkImage(imageUrl: rp.image!, width: double.infinity, fit: BoxFit.cover,
                                     errorWidget: (_, __, ___) => Container(color: C.b50))
-                                : Container(color: C.b50, child: const Icon(Icons.image_outlined, color: C.b200)),
+                                : Container(color: C.b50, child: Icon(Icons.image_outlined, color: C.b200)),
                           ),
                         ),
                         Padding(padding: const EdgeInsets.all(8), child: Column(
@@ -289,7 +289,7 @@ class _ProdDetailState extends State<ProductDetailScreen> {
                               maxLines: 2, overflow: TextOverflow.ellipsis),
                           const SizedBox(height: 2),
                           Text('₱${rp.price.toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: C.b700)),
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: C.b700)),
                         ])),
                       ]),
                     ),
@@ -326,7 +326,7 @@ class _ProdDetailState extends State<ProductDetailScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not start conversation.'),
+        SnackBar(content: const Text('Could not start conversation.'),
             backgroundColor: C.danger));
     }
   }

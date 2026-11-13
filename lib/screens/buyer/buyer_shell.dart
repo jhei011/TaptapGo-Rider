@@ -115,10 +115,10 @@ class _BottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: C.border, width: 0.8)),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(color: Color(0x0F000000), blurRadius: 12, offset: Offset(0, -3)),
         ],
       ),
@@ -277,7 +277,7 @@ class _CategoryDrawerState extends State<_CategoryDrawer> {
                       onTap: widget.onClearFilters,
                       onChevronTap: null,
                     ),
-                    const Divider(height: 1, color: C.border),
+                    Divider(height: 1, color: C.border),
                     ...parents.map((parent) {
                       final hasChildren   = parent.children.isNotEmpty;
                       final isExpanded    = _expanded.contains(parent.id);
@@ -311,7 +311,7 @@ class _CategoryDrawerState extends State<_CategoryDrawer> {
                               isActive: selected == child.id,
                               onTap: () => widget.onSelectCategory(child.id),
                             )),
-                          const Divider(height: 1, color: C.border),
+                          Divider(height: 1, color: C.border),
                         ],
                       );
                     }),

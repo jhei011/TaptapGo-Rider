@@ -86,7 +86,7 @@ class SellerShellState extends State<SellerShell> {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Log Out',
+              child: Text('Log Out',
                   style: TextStyle(color: C.danger))),
         ],
       ),

@@ -61,7 +61,7 @@ class BuyerCartScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Order Summary',
+            Text('Order Summary',
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -75,7 +75,7 @@ class BuyerCartScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       '${item.product?.name ?? 'Unknown'} ×${item.quantity}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 12, color: C.textSecondary),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -147,23 +147,23 @@ class BuyerCartScreen extends StatelessWidget {
                                 const Icon(Icons.shopping_cart_outlined,
                                     size: 20, color: C.b600),
                                 const SizedBox(width: 8),
-                                const Text('My Cart',
+                                Text('My Cart',
                                     style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.w800,
                                         color: C.textPrimary)),
                                 const SizedBox(width: 6),
                                 Text('(${cart.items.length} item/s)',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontSize: 14,
                                         color: C.textSecondary)),
                               ]),
                               TextButton.icon(
                                 onPressed: () =>
                                     _confirmClear(context, cart),
-                                icon: const Icon(Icons.delete_outline,
+                                icon: Icon(Icons.delete_outline,
                                     size: 15, color: C.danger),
-                                label: const Text('Clear Cart',
+                                label: Text('Clear Cart',
                                     style: TextStyle(
                                         fontSize: 13,
                                         color: C.danger,
@@ -213,14 +213,14 @@ class BuyerCartScreen extends StatelessWidget {
                                               errorWidget: (_, __, ___) =>
                                                   Container(
                                                       color: C.b50,
-                                                      child: const Icon(
+                                                      child: Icon(
                                                           Icons
                                                               .image_outlined,
                                                           color: C.b200)),
                                             )
                                           : Container(
                                               color: C.b50,
-                                              child: const Icon(
+                                              child: Icon(
                                                   Icons.image_outlined,
                                                   color: C.b200)),
                                     ),
@@ -233,7 +233,7 @@ class BuyerCartScreen extends StatelessWidget {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(p?.name ?? 'Unknown',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 14,
                                                 color: C.textPrimary),
@@ -255,7 +255,7 @@ class BuyerCartScreen extends StatelessWidget {
                                             ),
                                             child: Text(
                                                 p!.category!.name,
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                     fontSize: 10,
                                                     color: C.b700,
                                                     fontWeight:
@@ -264,7 +264,7 @@ class BuyerCartScreen extends StatelessWidget {
                                         const SizedBox(height: 6),
                                         Text(
                                           '₱${(p?.price ?? 0).toStringAsFixed(2)}',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w800,
                                               color: C.b700),
@@ -282,17 +282,17 @@ class BuyerCartScreen extends StatelessWidget {
                                       GestureDetector(
                                         onTap: () =>
                                             cart.remove(item.id),
-                                        child: const Icon(Icons.close,
+                                        child: Icon(Icons.close,
                                             size: 18, color: C.danger),
                                       ),
                                       const SizedBox(height: 4),
-                                      const Text('Subtotal',
+                                      Text('Subtotal',
                                           style: TextStyle(
                                               fontSize: 10,
                                               color: C.textMuted)),
                                       Text(
                                         '₱${item.subtotal.toStringAsFixed(2)}',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w800,
                                             color: C.textPrimary),
@@ -321,7 +321,7 @@ class BuyerCartScreen extends StatelessWidget {
                                               height: 30,
                                               alignment: Alignment.center,
                                               decoration:
-                                                  const BoxDecoration(
+                                                  BoxDecoration(
                                                 border: Border.symmetric(
                                                   vertical: BorderSide(
                                                       color: C.border),
@@ -381,7 +381,7 @@ class BuyerCartScreen extends StatelessWidget {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Clear',
+              child: Text('Clear',
                   style: TextStyle(color: C.danger))),
         ],
       ),

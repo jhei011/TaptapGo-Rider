@@ -564,13 +564,13 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
         margin: const EdgeInsets.only(bottom: kSpace12),
         padding: const EdgeInsets.all(kSpace12),
         decoration: BoxDecoration(
-          color: saved.error == null ? const Color(0xFFFEF9C3) : kStatusFailedBg,
+          color: saved.error == null ? kStatusPendingBg : kStatusFailedBg,
           borderRadius: BorderRadius.circular(kRadiusMd),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(saved.error == null ? Icons.cloud_off_outlined : Icons.error_outline,
-                size: 18, color: saved.error == null ? const Color(0xFF854D0E) : kStatusFailedFg),
+                size: 18, color: saved.error == null ? kStatusPendingFg : kStatusFailedFg),
             const SizedBox(width: kSpace8),
             Expanded(
               child: Text(
@@ -578,7 +578,7 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
                     ? 'Not sent yet. This delivery is saved on this phone with the photo, code and amount, '
                         'and will be sent when you are back online.'
                     : 'The saved delivery was refused: ${saved.error} Correct it and tap Mark as Delivered again.',
-                style: kBodySm.copyWith(color: saved.error == null ? const Color(0xFF854D0E) : kStatusFailedFg),
+                style: kBodySm.copyWith(color: saved.error == null ? kStatusPendingFg : kStatusFailedFg),
               ),
             ),
           ]),

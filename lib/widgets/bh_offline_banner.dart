@@ -52,18 +52,22 @@ class _BhOfflineBannerState extends State<BhOfflineBanner> {
 
   @override
   Widget build(BuildContext context) {
+    // Takes no space while online, and opens smoothly when the connection drops
     return Column(
       children: [
-        AnimatedSlide(
-          offset: _isOffline ? Offset.zero : const Offset(0, -1),
+        AnimatedContainer(
+          height: _isOffline ? 36 : 0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
+          clipBehavior: Clip.hardEdge,
+          decoration: const BoxDecoration(),
           child: Semantics(
             label: 'Offline warning: data may be outdated',
             child: Container(
               width: double.infinity,
               height: 36,
-              color: Colors.amber.shade700,
+              // TaptapShop's warning amber
+              color: const Color(0xFFB8802C),
               alignment: Alignment.center,
               child: const Text(
                 "⚡ You're offline — data may be outdated",

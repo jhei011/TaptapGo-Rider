@@ -166,7 +166,7 @@ class _SellerDashState extends State<SellerDashboardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Quick Actions',
+                            Text('Quick Actions',
                                 style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
@@ -213,7 +213,7 @@ class _SellerDashState extends State<SellerDashboardScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Column(
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Recent Products',
@@ -282,7 +282,7 @@ class _SellerDashState extends State<SellerDashboardScreen> {
                                         fontWeight: FontWeight.w700,
                                         fontSize: 13)),
                                 Text(m['buyer_name'] ?? '',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontSize: 12,
                                         color: C.textSecondary)),
                               ])),
@@ -296,7 +296,7 @@ class _SellerDashState extends State<SellerDashboardScreen> {
                                 const SizedBox(height: 3),
                                 Text(
                                     '₱${(m['total'] as num? ?? 0).toStringAsFixed(2)}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 13,
                                         color: C.b700)),
@@ -313,14 +313,14 @@ class _SellerDashState extends State<SellerDashboardScreen> {
                                 bottom: Radius.circular(10)),
                             border: Border.all(color: C.b100),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text('No products yet',
                                 style: TextStyle(
                                     color: C.textMuted, fontSize: 13)),
                           ),
                         ),
                     ] else
-                      const Center(
+                      Center(
                           child: Text('No data',
                               style: TextStyle(color: C.textMuted))),
 
@@ -442,7 +442,7 @@ class _StatCard extends StatelessWidget {
                     color: iconColor)),
             const SizedBox(height: 2),
             Text(label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 10, color: C.textSecondary)),
           ]),
         ),
@@ -506,7 +506,7 @@ class _ProductRow extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: C.border, width: 0.5)),
       ),
       child: Row(children: [
@@ -520,10 +520,10 @@ class _ProductRow extends StatelessWidget {
                     imageUrl: imageUrl, fit: BoxFit.cover,
                     errorWidget: (_, __, ___) => Container(
                         color: C.b50,
-                        child: const Icon(Icons.image_outlined,
+                        child: Icon(Icons.image_outlined,
                             color: C.b200, size: 20)))
                 : Container(color: C.b50,
-                    child: const Icon(Icons.image_outlined,
+                    child: Icon(Icons.image_outlined,
                         color: C.b200, size: 20)),
           ),
         ),
@@ -533,7 +533,7 @@ class _ProductRow extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start,
               children: [
             Text(name,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: C.textPrimary),
@@ -548,7 +548,7 @@ class _ProductRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(category,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 10,
                       color: C.b700,
                       fontWeight: FontWeight.w600),
@@ -557,7 +557,7 @@ class _ProductRow extends StatelessWidget {
             ),
             const SizedBox(height: 3),
             Text('₱${price.toStringAsFixed(2)}',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: C.b700)),
@@ -567,7 +567,7 @@ class _ProductRow extends StatelessWidget {
         // Stock + status
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text('$stock in stock',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 10, color: C.textMuted)),
           const SizedBox(height: 4),
           StatusPill(status: status, small: true),

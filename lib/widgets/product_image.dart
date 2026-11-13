@@ -22,7 +22,7 @@ class ProductImage extends StatelessWidget {
       fit: fit,
       placeholder: (_, __) => Container(
         color: C.b50,
-        child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: C.b200)),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: C.b200)),
       ),
       errorWidget: (_, __, ___) => _placeholder(),
     );
@@ -34,6 +34,6 @@ class ProductImage extends StatelessWidget {
 
   Widget _placeholder() => Container(
     color: C.b50,
-    child: const Center(child: Icon(Icons.image_outlined, color: C.b200, size: 36)),
+    child: Center(child: Icon(Icons.image_outlined, color: C.b200, size: 36)),
   );
 }

@@ -65,8 +65,8 @@ class _BuyerNavBarState extends State<BuyerNavBar> {
                 child: TextField(
                   controller: widget.searchCtrl,
                   onSubmitted: widget.onSearch,
-                  style: const TextStyle(color: C.textPrimary, fontSize: 12),
-                  decoration: const InputDecoration(
+                  style: TextStyle(color: C.textPrimary, fontSize: 12),
+                  decoration: InputDecoration(
                     hintText: 'Search products...',
                     hintStyle: TextStyle(color: C.textSecondary, fontSize: 12),
                     border: InputBorder.none,

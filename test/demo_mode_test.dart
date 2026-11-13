@@ -64,7 +64,14 @@ void main() {
       expect(auth.user!.role, 'linehaul');
       final home = await Api.get('/linehaul/home') as Map;
       expect(home['name'], 'Ernesto Villareal');
-      expect(home['duty_status'], 'Off Duty');
+      // The demo courier has one trip loading at the hub and one completed trip
+      expect(home['duty_status'], 'Loading');
+      final trips = await Api.get('/linehaul/trips') as List;
+      expect(trips.single['status'], 'draft');
+      expect((await Api.get('/linehaul/trips', query: {'scope': 'history'}) as List).single['status'], 'closed');
+      final started = await Api.post('/linehaul/trips/${trips.single['id']}/depart', body: const {}) as Map;
+      expect(started['trip']['status'], 'dispatched');
+      expect((await Api.get('/linehaul/home') as Map)['duty_status'], 'On Trip');
     }, () => demo.client);
   });
 

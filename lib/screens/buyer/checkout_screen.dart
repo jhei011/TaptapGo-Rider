@@ -72,7 +72,7 @@ class _CheckoutState extends State<CheckoutScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Order failed. Please try again.'), backgroundColor: C.danger));
+        SnackBar(content: const Text('Order failed. Please try again.'), backgroundColor: C.danger));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -85,15 +85,15 @@ class _CheckoutState extends State<CheckoutScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(width: 70, height: 70,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(colors: [C.b50, C.b100]),
             shape: BoxShape.circle),
-          child: const Icon(Icons.check_circle, size: 40, color: C.b700)),
+          child: Icon(Icons.check_circle, size: 40, color: C.b700)),
         const SizedBox(height: 16),
         const Text('Order Placed!',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22)),
         const SizedBox(height: 8),
-        const Text('Your order has been placed successfully.',
+        Text('Your order has been placed successfully.',
             textAlign: TextAlign.center,
             style: TextStyle(color: C.textSecondary, fontSize: 13)),
       ]),
@@ -102,7 +102,7 @@ class _CheckoutState extends State<CheckoutScreen> {
           Navigator.pop(context); // close dialog
           Navigator.pop(context); // back to cart
         },
-        child: const Text('OK', style: TextStyle(color: C.b700, fontWeight: FontWeight.w700, fontSize: 16)),
+        child: Text('OK', style: TextStyle(color: C.b700, fontWeight: FontWeight.w700, fontSize: 16)),
       )],
     ),
   );
@@ -162,7 +162,7 @@ class _CheckoutState extends State<CheckoutScreen> {
                         width: selected ? 1.5 : 1,
                       ),
                       boxShadow: selected
-                          ? [const BoxShadow(color: C.b100, blurRadius: 6)]
+                          ? [BoxShadow(color: C.b100, blurRadius: 6)]
                           : null,
                     ),
                     child: Row(children: [
@@ -181,7 +181,7 @@ class _CheckoutState extends State<CheckoutScreen> {
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
                                 color: selected ? C.b800 : C.textPrimary)),
                         Text(_paySubtitle(m),
-                            style: const TextStyle(fontSize: 11, color: C.textMuted)),
+                            style: TextStyle(fontSize: 11, color: C.textMuted)),
                       ])),
                       if (selected) const Icon(Icons.check_circle, color: C.b600, size: 18),
                     ]),
@@ -219,7 +219,7 @@ class _CheckoutState extends State<CheckoutScreen> {
                       Text('${item.product?.name ?? 'Unknown'} × ${item.quantity}',
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                       Text('₱${(item.product?.price ?? 0).toStringAsFixed(2)} each',
-                          style: const TextStyle(fontSize: 11, color: C.textMuted)),
+                          style: TextStyle(fontSize: 11, color: C.textMuted)),
                     ])),
                     Text('₱${item.subtotal.toStringAsFixed(2)}',
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
@@ -252,8 +252,8 @@ class _CheckoutState extends State<CheckoutScreen> {
   Widget _field(String label, TextEditingController ctrl, {bool required = false}) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       RichText(text: TextSpan(text: label,
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary),
-        children: required ? const [TextSpan(text: ' *', style: TextStyle(color: C.danger))] : null)),
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary),
+        children: required ? [TextSpan(text: ' *', style: TextStyle(color: C.danger))] : null)),
       const SizedBox(height: 5),
       TextFormField(controller: ctrl,
         decoration: InputDecoration(hintText: label),

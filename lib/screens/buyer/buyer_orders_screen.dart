@@ -68,7 +68,7 @@ class _ShipmentInfo extends StatelessWidget {
       padding: const EdgeInsets.only(top: 12),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Tracking ${s.trackingNumber} · ${AppConstants.orderStatusLabel(order.status)} ${formatTime(s.latestTime)}',
-            style: const TextStyle(fontSize: 11, color: C.textSecondary)),
+            style: TextStyle(fontSize: 11, color: C.textSecondary)),
         // A32: the rider asks for this code to complete the delivery
         if (s.deliveryOtp != null)
           Container(
@@ -76,12 +76,12 @@ class _ShipmentInfo extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(color: C.b50, borderRadius: BorderRadius.circular(10), border: Border.all(color: C.b200)),
             child: Row(children: [
-              const Expanded(
+              Expanded(
                 child: Text('Delivery code — give it to the rider when your parcel arrives',
                     style: TextStyle(fontSize: 12, color: C.b700)),
               ),
               Text(s.deliveryOtp!,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 4, color: C.b700)),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 4, color: C.b700)),
             ]),
           ),
         if (s.failedReason != null && order.status != 'delivered')
@@ -91,13 +91,13 @@ class _ShipmentInfo extends StatelessWidget {
               order.status == 'return_to_sender'
                   ? 'Could not be delivered (${s.failedReason}). It is being returned to the seller.'
                   : 'Delivery attempt ${s.attempt} of 3 failed: ${s.failedReason}. The courier will try again.',
-              style: const TextStyle(fontSize: 12, color: C.danger),
+              style: TextStyle(fontSize: 12, color: C.danger),
             ),
           ),
         if (s.podPhotoUrl != null) ...[
           const SizedBox(height: 8),
           Text('Proof of delivery · ${formatTime(s.times['delivered'])}',
-              style: const TextStyle(fontSize: 11, color: C.textSecondary)),
+              style: TextStyle(fontSize: 11, color: C.textSecondary)),
           const SizedBox(height: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
@@ -149,13 +149,13 @@ class _OrderCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Order #${order.id}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                   color: C.textPrimary)),
                           const SizedBox(height: 2),
                           Text(_formatDate(order.createdAt),
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 11, color: C.textMuted)),
                         ],
                       ),
@@ -181,7 +181,7 @@ class _OrderCard extends StatelessWidget {
                             const SizedBox(width: 5),
                             Text(
                               order.paymentMethod.toUpperCase(),
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: C.b700),
@@ -201,7 +201,7 @@ class _OrderCard extends StatelessWidget {
                 // ── Order items ───────────────────────────────────────────
                 ...order.items.map((item) => _ItemRow(item: item)),
 
-                const Divider(height: 20, color: C.border),
+                Divider(height: 20, color: C.border),
 
                 // ── Footer: address + total ────────────────────────────────
                 Row(
@@ -217,7 +217,7 @@ class _OrderCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               order.shortAddress,
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 12, color: C.textSecondary),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -228,12 +228,12 @@ class _OrderCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      const Text('Total',
+                      Text('Total',
                           style: TextStyle(
                               fontSize: 11, color: C.textMuted)),
                       Text(
                         '₱${order.total.toStringAsFixed(2)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: C.b700),
@@ -346,13 +346,13 @@ class _OrderCard extends StatelessWidget {
                                   fit: BoxFit.cover,
                                   errorWidget: (_, __, ___) =>
                                       Container(color: C.b50,
-                                          child: const Icon(
+                                          child: Icon(
                                               Icons.image_outlined,
                                               color: C.b200)),
                                 )
                               : Container(
                                   color: C.b50,
-                                  child: const Icon(
+                                  child: Icon(
                                       Icons.image_outlined,
                                       color: C.b200)),
                         ),
@@ -368,7 +368,7 @@ class _OrderCard extends StatelessWidget {
                                   fontSize: 13)),
                           Text(
                             '₱${item.productPrice.toStringAsFixed(2)} × ${item.quantity}',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 12, color: C.textMuted),
                           ),
                         ]),
@@ -425,7 +425,7 @@ class _OrderCard extends StatelessWidget {
               child: const Text('No')),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Yes, Cancel',
+              child: Text('Yes, Cancel',
                   style: TextStyle(color: C.danger))),
         ],
       ),
@@ -447,7 +447,7 @@ class _OrderCard extends StatelessWidget {
       SizedBox(
           width: 110,
           child: Text(label,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 13, color: C.textSecondary))),
       Expanded(
           child: Text(value,
@@ -513,12 +513,12 @@ class _ItemRow extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorWidget: (_, __, ___) => Container(
                         color: C.b50,
-                        child: const Icon(Icons.image_outlined,
+                        child: Icon(Icons.image_outlined,
                             color: C.b200, size: 24)),
                   )
                 : Container(
                     color: C.b50,
-                    child: const Icon(Icons.image_outlined,
+                    child: Icon(Icons.image_outlined,
                         color: C.b200, size: 24)),
           ),
         ),
@@ -529,7 +529,7 @@ class _ItemRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
             Text(item.productName,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: C.textPrimary),
@@ -538,7 +538,7 @@ class _ItemRow extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               'x${item.quantity}  @  ₱${item.productPrice.toStringAsFixed(2)}',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 11, color: C.textMuted),
             ),
           ]),
@@ -547,7 +547,7 @@ class _ItemRow extends StatelessWidget {
         // Subtotal
         Text(
           '₱${item.subtotal.toStringAsFixed(2)}',
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: C.textPrimary),

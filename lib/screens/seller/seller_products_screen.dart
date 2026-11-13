@@ -47,7 +47,7 @@ class _SellerProductsState extends State<SellerProductsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Column(crossAxisAlignment: CrossAxisAlignment.start,
+                    Column(crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                       Text('My Products',
                           style: TextStyle(
@@ -123,7 +123,7 @@ class _SellerProductsState extends State<SellerProductsScreen> {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Delete',
+              child: Text('Delete',
                   style: TextStyle(color: C.danger))),
         ],
       ),
@@ -179,11 +179,11 @@ class _ProductCard extends StatelessWidget {
                         Container(color: C.b50),
                     errorWidget: (_, __, ___) => Container(
                         color: C.b50,
-                        child: const Icon(Icons.image_outlined,
+                        child: Icon(Icons.image_outlined,
                             color: C.b200, size: 28)))
                 : Container(
                     color: C.b50,
-                    child: const Icon(Icons.image_outlined,
+                    child: Icon(Icons.image_outlined,
                         color: C.b200, size: 28)),
           ),
         ),
@@ -198,7 +198,7 @@ class _ProductCard extends StatelessWidget {
                 Row(children: [
                   Expanded(
                     child: Text(p.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                             color: C.textPrimary),
@@ -217,14 +217,14 @@ class _ProductCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(p.category!.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 10,
                             color: C.b700,
                             fontWeight: FontWeight.w600)),
                   ),
                 const SizedBox(height: 4),
                 Text('₱${p.price.toStringAsFixed(2)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: C.b700,
                         fontWeight: FontWeight.w800,
                         fontSize: 15)),
@@ -266,7 +266,7 @@ class _ProductCard extends StatelessWidget {
                   color: C.b50,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.edit_outlined,
+                child: Icon(Icons.edit_outlined,
                     size: 16, color: C.b700),
               ),
             ),
@@ -281,7 +281,7 @@ class _ProductCard extends StatelessWidget {
                   color: C.dangerBg,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.delete_outline,
+                child: Icon(Icons.delete_outline,
                     size: 16, color: C.danger),
               ),
             ),

@@ -61,7 +61,7 @@ class _BuyerProfileState extends State<BuyerProfileScreen> {
                   InfoRow(label: 'Age', value: p.age?.toString() ?? '—'),
                   InfoRow(label: 'Contact No.', value: p.contactNo ?? '—'),
                 ] else
-                  const Center(child: Text('No profile data', style: TextStyle(color: C.textMuted, fontSize: 13))),
+                  Center(child: Text('No profile data', style: TextStyle(color: C.textMuted, fontSize: 13))),
               ]),
               const SizedBox(height: 12),
 
@@ -74,7 +74,7 @@ class _BuyerProfileState extends State<BuyerProfileScreen> {
                   InfoRow(label: 'Street', value: p.street ?? '—'),
                   InfoRow(label: 'House No.', value: p.houseNo ?? '—'),
                 ] else
-                  const Center(child: Text('—', style: TextStyle(color: C.textMuted))),
+                  Center(child: Text('—', style: TextStyle(color: C.textMuted))),
               ]),
               const SizedBox(height: 12),
 
@@ -90,7 +90,7 @@ class _BuyerProfileState extends State<BuyerProfileScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
                         color: C.deliveredBg, borderRadius: BorderRadius.circular(20)),
-                      child: const Text('Approved',
+                      child: Text('Approved',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: C.delivered)),
                     ),
                   ]),
@@ -126,7 +126,7 @@ class _BuyerProfileState extends State<BuyerProfileScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Log Out', style: TextStyle(color: C.danger))),
+            child: Text('Log Out', style: TextStyle(color: C.danger))),
         ],
       ),
     );

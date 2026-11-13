@@ -3,6 +3,7 @@ import '../../core/services/courier_service.dart';
 import '../../core/services/api.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/grad_button.dart';
+import '../../widgets/taptapgo_brand.dart';
 
 /// Rider account activation screen.
 ///
@@ -44,10 +45,10 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
   String? _resendResult;
 
   // ── cached border shapes (TC-RID-021 validation fields) ───────────────────
-  static final _borderDefault  = OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: const BorderSide(color: Color(0xFFD1D5DB)));
-  static final _borderFocused  = OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: const BorderSide(color: Color(0xFF2E7C82), width: 1.5));
-  static final _borderError    = OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: const BorderSide(color: Color(0xFFDC2626)));
-  static final _borderErrFocus = OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.5));
+  static OutlineInputBorder get _borderDefault  => OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: BorderSide(color: C.adapt(const Color(0xFFD1D5DB), const Color(0xFF4A4956))));
+  static OutlineInputBorder get _borderFocused  => OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: const BorderSide(color: Color(0xFF2E7C82), width: 1.5));
+  static OutlineInputBorder get _borderError    => OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: BorderSide(color: C.adapt(const Color(0xFFDC2626), const Color(0xFFF0756A))));
+  static OutlineInputBorder get _borderErrFocus => OutlineInputBorder(borderRadius: BorderRadius.circular(9), borderSide: BorderSide(color: C.adapt(const Color(0xFFDC2626), const Color(0xFFF0756A)), width: 1.5));
 
   @override
   void initState() {
@@ -125,13 +126,13 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(
           width: 64, height: 64,
-          decoration: const BoxDecoration(color: C.b50, shape: BoxShape.circle),
-          child: const Icon(Icons.check_circle, size: 38, color: C.b700)),
+          decoration: BoxDecoration(color: C.b50, shape: BoxShape.circle),
+          child: Icon(Icons.check_circle, size: 38, color: C.b700)),
         const SizedBox(height: 14),
-        const Text('Account Activated!',
+        Text('Account Activated!',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: C.textPrimary)),
         const SizedBox(height: 8),
-        const Text('Your rider account is now active. You can log in with your email and new password.',
+        Text('Your rider account is now active. You can log in with your email and new password.',
             textAlign: TextAlign.center,
             style: TextStyle(color: C.textSecondary, fontSize: 13)),
       ]),
@@ -141,7 +142,7 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
             Navigator.pop(context); // dismiss dialog
             Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
           },
-          child: const Text('Go to Login',
+          child: Text('Go to Login',
               style: TextStyle(color: C.b700, fontWeight: FontWeight.w700)),
         ),
       ],
@@ -153,38 +154,31 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: const Color(0xFFF5F6F4),
+      backgroundColor: C.adapt(const Color(0xFFF5F6F4), const Color(0xFF1C1B22)),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: C.surface,
         elevation: 1,
         shadowColor: Colors.black12,
         automaticallyImplyLeading: false,
         titleSpacing: 20,
         title: Row(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 31, height: 31,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF0E2A38), Color(0xFF4A949C)],
-                begin: Alignment.topLeft, end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: const Icon(Icons.local_shipping, color: Colors.white, size: 18),
+          // Logo and wordmark, laid out like TaptapShop's activation header
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(TaptapGoBrand.logoAsset, width: 34, height: 34, fit: BoxFit.cover),
           ),
           const SizedBox(width: 8),
-          const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text.rich(TextSpan(
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, height: 1.1),
-              children: [
-                TextSpan(text: 'Taptap', style: TextStyle(color: Color(0xFF0E2A38))),
-                TextSpan(text: 'Go', style: TextStyle(color: Color(0xFF2E7C82), fontStyle: FontStyle.italic)),
-              ],
-            )),
-            Text('Rider App', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF2E7C82), height: 1.1)),
-          ]),
+          RichText(text: TextSpan(children: [
+            TextSpan(text: 'Taptap',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: C.adapt(const Color(0xFF0E2A38), C.textPrimary))),
+            TextSpan(text: 'Go',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, fontStyle: FontStyle.italic,
+                    color: C.adapt(const Color(0xFF2E7C82), C.tealOnDark))),
+          ])),
         ]),
       ),
       body: _loadingInfo
-          ? const Center(child: CircularProgressIndicator(color: C.b600))
+          ? Center(child: CircularProgressIndicator(color: C.adapt(C.b600, C.tealOnDark)))
           : _tokenError != null
               ? _buildTokenError()
               : _buildForm(),
@@ -201,28 +195,28 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
           child: Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: C.surface,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFF0F1EF)),
+              border: Border.all(color: C.adapt(const Color(0xFFF0F1EF), const Color(0xFF2C2B36))),
               boxShadow: const [BoxShadow(color: Color(0x18000000), blurRadius: 40, offset: Offset(0, 16))],
             ),
             child: Column(children: [
               Container(
                 width: 64, height: 64,
                 decoration: BoxDecoration(color: C.dangerBg, borderRadius: BorderRadius.circular(32)),
-                child: const Icon(Icons.link_off, size: 32, color: C.danger)),
+                child: Icon(Icons.link_off, size: 32, color: C.danger)),
               const SizedBox(height: 16),
-              const Text('Activation Link Invalid',
+              Text('Activation Link Invalid',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: C.textPrimary)),
               const SizedBox(height: 8),
               Text(_tokenError!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 13, color: C.textSecondary)),
+                  style: TextStyle(fontSize: 13, color: C.textSecondary)),
               if (_riderEmail != null) ...[
                 const SizedBox(height: 20),
                 const Divider(),
                 const SizedBox(height: 12),
-                const Text('Need a new link?',
+                Text('Need a new link?',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: C.textPrimary)),
                 const SizedBox(height: 8),
                 if (_resendResult != null)
@@ -234,7 +228,7 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
                       border: Border.all(color: C.b200)),
                     child: Text(_resendResult!,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 12, color: C.b700)))
+                        style: TextStyle(fontSize: 12, color: C.b700)))
                 else
                   GradButton(
                     label: 'Resend Activation Email',
@@ -246,8 +240,8 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false),
-                child: const Text('Back to Login',
-                    style: TextStyle(color: C.b600, fontWeight: FontWeight.w600)),
+                child: Text('Back to Login',
+                    style: TextStyle(color: C.adapt(C.b600, C.tealOnDark), fontWeight: FontWeight.w600)),
               ),
             ]),
           ),
@@ -266,33 +260,33 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
           child: Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: C.surface,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFF0F1EF)),
+              border: Border.all(color: C.adapt(const Color(0xFFF0F1EF), const Color(0xFF2C2B36))),
               boxShadow: const [BoxShadow(color: Color(0x18000000), blurRadius: 40, offset: Offset(0, 16))],
             ),
             child: Form(
               key: _fk,
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 // Header
-                const SizedBox(
+                SizedBox(
                   width: 56, height: 56,
                   child: DecoratedBox(
                     decoration: BoxDecoration(color: C.b50),
                     child: Icon(Icons.lock_outline, size: 28, color: C.b700),
                   ),
                 ),
-                const Text('Activate Your Account',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF0E2A38))),
+                Text('Activate Your Account',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: C.adapt(const Color(0xFF0E2A38), C.textPrimary))),
                 const SizedBox(height: 4),
                 if (_riderName != null)
                   Text('Welcome, $_riderName',
-                      style: const TextStyle(fontSize: 13, color: C.textSecondary)),
+                      style: TextStyle(fontSize: 13, color: C.textSecondary)),
                 if (_logisticsName != null)
                   Text(_logisticsName!,
-                      style: const TextStyle(fontSize: 12, color: C.b600, fontWeight: FontWeight.w600)),
+                      style: TextStyle(fontSize: 12, color: C.adapt(C.b600, C.tealOnDark), fontWeight: FontWeight.w600)),
                 const SizedBox(height: 6),
-                const Text('Set a password to activate your rider account.',
+                Text('Set a password to activate your rider account.',
                     style: TextStyle(fontSize: 13, color: C.textSecondary)),
                 const SizedBox(height: 22),
 
@@ -303,12 +297,12 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
                     decoration: BoxDecoration(
                       color: C.dangerBg,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFFCA5A5))),
+                      border: Border.all(color: C.adapt(const Color(0xFFFCA5A5), const Color(0xFF7A3B36)))),
                     child: Row(children: [
-                      const Icon(Icons.error_outline, color: C.danger, size: 17),
+                      Icon(Icons.error_outline, color: C.danger, size: 17),
                       const SizedBox(width: 8),
                       Expanded(child: Text(_submitError!,
-                          style: const TextStyle(color: C.danger, fontSize: 12))),
+                          style: TextStyle(color: C.danger, fontSize: 12))),
                     ]),
                   ),
                   const SizedBox(height: 16),
@@ -321,10 +315,10 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
                     color: C.b50,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: C.b200)),
-                  child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Password must contain:',
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: C.b700)),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text('• At least 8 characters\n• One uppercase letter (A–Z)\n• One lowercase letter (a–z)\n• One number (0–9)\n• One special character (!@#\$%^&*)',
                         style: TextStyle(fontSize: 11, color: C.textSecondary, height: 1.6)),
                   ]),
@@ -341,7 +335,7 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
                   decoration: _deco('Create password').copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(_ob1 ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                          size: 18, color: const Color(0xFF9AA5A4)),
+                          size: 18, color: C.adapt(const Color(0xFF9AA5A4), const Color(0xFF8E8D99))),
                       onPressed: () => setState(() => _ob1 = !_ob1))),
                   // TC-RID-021: client-side rule check mirrors backend
                   validator: (v) {
@@ -366,7 +360,7 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
                   decoration: _deco('Confirm password').copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(_ob2 ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                          size: 18, color: const Color(0xFF9AA5A4)),
+                          size: 18, color: C.adapt(const Color(0xFF9AA5A4), const Color(0xFF8E8D99))),
                       onPressed: () => setState(() => _ob2 = !_ob2))),
                   // TC-RID-022: password confirmation mismatch
                   validator: (v) => v != _pw.text ? 'Passwords do not match.' : null,
@@ -388,12 +382,12 @@ class _RiderActivationScreenState extends State<RiderActivationScreen> {
   }
 
   Widget _lbl(String text) => Text(text,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF374151)));
+      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: C.adapt(const Color(0xFF374151), const Color(0xFFDCDCE3))));
 
   InputDecoration _deco(String hint) => InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(color: Color(0xFF9AA5A4), fontSize: 13),
-    filled: true, fillColor: const Color(0xFFFBFCFB), isDense: true,
+    hintStyle: TextStyle(color: C.adapt(const Color(0xFF9AA5A4), const Color(0xFF8E8D99)), fontSize: 13),
+    filled: true, fillColor: C.adapt(const Color(0xFFFBFCFB), const Color(0xFF26252F)), isDense: true,
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
     border:             _borderDefault,
     enabledBorder:      _borderDefault,

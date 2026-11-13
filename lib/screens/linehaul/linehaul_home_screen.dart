@@ -5,18 +5,27 @@ import '../../core/theme/app_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/bh_app_bar.dart';
 import '../courier/rider_job_widgets.dart' show cardDecoration;
+import 'linehaul_trips_screen.dart';
+import '../../widgets/teal_pattern.dart';
+import '../../widgets/confirm_logout.dart';
+import '../../widgets/panel_label.dart';
+import '../../widgets/reveal.dart';
 
-/// Home screen of a courier: a linehaul driver who moves parcels between hubs
+/// Home tab of the Linehaul Courier panel: a linehaul driver who moves parcels between hubs
 /// (Account Creation, Courier role: TC-COU-032). Couriers get no rider job offers or rider screens.
+/// Shows the duty status, the current trips and the courier's truck.
 class LinehaulHomeScreen extends StatefulWidget {
-  const LinehaulHomeScreen({super.key});
+  /// Opens the Trips tab (set by LinehaulShell).
+  final VoidCallback? onOpenTrips;
+  const LinehaulHomeScreen({super.key, this.onOpenTrips});
 
   @override
-  State<LinehaulHomeScreen> createState() => _LinehaulHomeScreenState();
+  State<LinehaulHomeScreen> createState() => LinehaulHomeScreenState();
 }
 
-class _LinehaulHomeScreenState extends State<LinehaulHomeScreen> {
+class LinehaulHomeScreenState extends State<LinehaulHomeScreen> {
   Map<String, dynamic>? _home;
+  List<Map<String, dynamic>> _trips = const [];
   String? _error;
   bool _loading = true;
 
@@ -26,7 +35,10 @@ class _LinehaulHomeScreenState extends State<LinehaulHomeScreen> {
     _load();
   }
 
+  Future<void> reload() => _load();
+
   Future<void> _load() async {
+    _loadTrips();
     setState(() { _loading = true; _error = null; });
     try {
       final d = await Api.get('/linehaul/home') as Map<String, dynamic>;
@@ -41,22 +53,25 @@ class _LinehaulHomeScreenState extends State<LinehaulHomeScreen> {
     }
   }
 
+  /// Current trips; the home screen still works if they cannot be loaded.
+  Future<void> _loadTrips() async {
+    try {
+      final d = await Api.get('/linehaul/trips') as List;
+      if (mounted) setState(() => _trips = d.cast<Map<String, dynamic>>());
+    } catch (_) {
+      if (mounted) setState(() => _trips = const []);
+    }
+  }
+
+  Future<void> _openTrip(Map<String, dynamic> trip) async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => LinehaulTripDetailScreen(tripId: trip['id'] as int)));
+    if (mounted) _load();
+  }
+
   Future<void> _logout() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Log Out', style: TextStyle(color: kActionDestructive)),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
+    // TaptapShop's "Log out?" dialog
+    final ok = await confirmLogoutDialog(context, message: "You'll need to sign in again to see your trips.");
+    if (!ok || !mounted) return;
     await context.read<AuthProvider>().logout();
     // Clear the history so Back cannot return to account screens (TC-COU-052)
     if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
@@ -68,7 +83,8 @@ class _LinehaulHomeScreenState extends State<LinehaulHomeScreen> {
     return Scaffold(
       backgroundColor: kSurfaceRaised,
       appBar: BhAppBar(
-        title: 'Courier',
+        // Logo row only, like the rider's Home (the card below says which panel this is)
+        title: BhAppBar.kWordmark,
         showBack: false,
         actions: [IconButton(icon: const Icon(Icons.logout), tooltip: 'Log Out', onPressed: _logout)],
       ),
@@ -88,16 +104,11 @@ class _LinehaulHomeScreenState extends State<LinehaulHomeScreen> {
               ]),
             )
           else ...[
-            _banner(home),
+            Reveal(child: _banner(home)),
             const SizedBox(height: kSpace12),
-            _details(home),
+            Reveal(index: 1, child: _tripsSection()),
             const SizedBox(height: kSpace12),
-            Container(
-              padding: const EdgeInsets.all(kSpace16),
-              decoration: BoxDecoration(color: kBrand50, borderRadius: BorderRadius.circular(kRadiusLg)),
-              child: Text('Hub-to-hub trips assigned by your logistics company will appear here.',
-                  style: kBodyMd.copyWith(color: kBrand700)),
-            ),
+            Reveal(index: 2, child: _details(home)),
           ],
         ]),
       ),
@@ -107,12 +118,15 @@ class _LinehaulHomeScreenState extends State<LinehaulHomeScreen> {
   Widget _banner(Map<String, dynamic> home) => Container(
         width: double.infinity,
         padding: const EdgeInsets.all(kSpace20),
-        decoration: BoxDecoration(color: kBrand800, borderRadius: BorderRadius.circular(kRadiusLg)),
+        decoration: TealDecoration(BoxDecoration(gradient: kHeroGradient, borderRadius: BorderRadius.circular(kRadiusLg))),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Welcome back,', style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12)),
           const SizedBox(height: 2),
           Text(home['name'] as String? ?? '',
               style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          // Which panel this is (riders have the Rider Panel)
+          const PanelLabel(icon: Icons.local_shipping_rounded, text: 'Linehaul Courier Panel'),
           const SizedBox(height: 2),
           Text(home['logistics_company'] as String? ?? '',
               style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12)),
@@ -129,6 +143,29 @@ class _LinehaulHomeScreenState extends State<LinehaulHomeScreen> {
           ),
         ]),
       );
+
+  Widget _tripsSection() {
+    if (_trips.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(kSpace16),
+        decoration: BoxDecoration(color: kBrand50, borderRadius: BorderRadius.circular(kRadiusLg)),
+        child: Text('Hub-to-hub trips assigned by your logistics company will appear here.',
+            style: kBodyMd.copyWith(color: AppPalette.dark ? kTealOnDark : kBrand700)),
+      );
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Expanded(child: Text('Current trips', style: kHeadingSm)),
+        if (widget.onOpenTrips != null)
+          TextButton(onPressed: widget.onOpenTrips, child: const Text('See all')),
+      ]),
+      const SizedBox(height: kSpace4),
+      for (final t in _trips.take(3)) ...[
+        LinehaulTripCard(trip: t, onTap: () => _openTrip(t)),
+        const SizedBox(height: kSpace8),
+      ],
+    ]);
+  }
 
   Widget _details(Map<String, dynamic> home) {
     final hub = home['home_hub'] as Map?;

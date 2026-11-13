@@ -56,7 +56,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Log Out'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Log Out'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Log out'));
       await tester.pumpAndSettle();
       expect(calls, contains('POST /logout'));
       expect(find.text('Login screen'), findsOneWidget);

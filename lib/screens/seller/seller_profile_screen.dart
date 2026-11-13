@@ -112,7 +112,7 @@ class _SellerProfileState extends State<SellerProfileScreen> {
                             label: 'Line of Business',
                             value: p.lineOfBusiness ?? '—'),
                       ]
-                    : [const Text('—',
+                    : [Text('—',
                         style: TextStyle(color: C.textMuted))],
               ),
               const SizedBox(height: 12),
@@ -143,7 +143,7 @@ class _SellerProfileState extends State<SellerProfileScreen> {
                             label: 'Contact No.',
                             value: p.contactNo ?? '—'),
                       ]
-                    : [const Text('—',
+                    : [Text('—',
                         style: TextStyle(color: C.textMuted))],
               ),
               const SizedBox(height: 12),
@@ -170,7 +170,7 @@ class _SellerProfileState extends State<SellerProfileScreen> {
                             label: 'House No.',
                             value: p.houseNo ?? '—'),
                       ]
-                    : [const Text('—',
+                    : [Text('—',
                         style: TextStyle(color: C.textMuted))],
               ),
               const SizedBox(height: 12),
@@ -187,7 +187,7 @@ class _SellerProfileState extends State<SellerProfileScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Status',
+                        Text('Status',
                             style: TextStyle(
                                 fontSize: 13, color: C.textSecondary)),
                         Container(
@@ -254,7 +254,7 @@ class _SellerProfileState extends State<SellerProfileScreen> {
               child: const Text('Cancel')),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Log Out',
+              child: Text('Log Out',
                   style: TextStyle(color: C.danger))),
         ],
       ),

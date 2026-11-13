@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'core/demo/demo_api.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/palette_sync.dart';
 import 'core/services/location_service.dart';
 import 'core/services/theme_service.dart';
 import 'providers/auth_provider.dart';
@@ -23,7 +24,7 @@ import 'screens/auth/rider_activation_screen.dart';
 import 'screens/buyer/buyer_shell.dart';
 import 'screens/seller/seller_shell.dart';
 import 'screens/courier/courier_shell.dart';
-import 'screens/linehaul/linehaul_home_screen.dart';
+import 'screens/linehaul/linehaul_shell.dart';
 
 // Courier screens (pushed on top of shell)
 import 'screens/courier/rider_job_screen.dart';
@@ -86,10 +87,14 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
           navigatorKey: _navigatorKey,
           title: 'TaptapGo',
           debugShowCheckedModeBanner: false,
-          // Marks every demo screen, so sample data cannot be mistaken for real results
-          builder: kDemoMode
-              ? (context, child) => Banner(message: 'DEMO', location: BannerLocation.topEnd, child: child!)
-              : null,
+          // Every screen's colours follow the theme shown (light, dark or the phone's setting).
+          // Demo builds also mark every screen, so sample data cannot be mistaken for real results.
+          builder: (context, child) => PaletteSync(
+            dark: Theme.of(context).brightness == Brightness.dark,
+            child: kDemoMode
+                ? Banner(message: 'DEMO', location: BannerLocation.topEnd, child: child!)
+                : child!,
+          ),
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: themeService.flutterMode,
@@ -107,7 +112,7 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
             '/buyer':   (_) => const BuyerShell(),
             '/seller':  (_) => const SellerShell(),
             '/courier': (_) => const CourierShell(),
-            '/linehaul': (_) => const LinehaulHomeScreen(),
+            '/linehaul': (_) => const LinehaulShell(),
 
             // Courier routes
             '/courier/scan':          (_) => const WaybillScannerScreen(confirmPickups: true),

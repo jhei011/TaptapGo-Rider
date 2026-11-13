@@ -69,7 +69,7 @@ class _BuyerEditProfileState extends State<BuyerEditProfileScreen> {
       context.read<AuthProvider>().updateUser(updated);
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated!'), backgroundColor: C.b700));
+        SnackBar(content: const Text('Profile updated!'), backgroundColor: C.b700));
     } on ApiError catch (e) { setState(() => _error = e.message); }
     catch (_) { setState(() => _error = 'Failed to update profile.'); }
     finally { if (mounted) setState(() => _loading = false); }
@@ -120,7 +120,7 @@ class _BuyerEditProfileState extends State<BuyerEditProfileScreen> {
               const SizedBox(height: 12),
               Container(padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: C.dangerBg, borderRadius: BorderRadius.circular(10)),
-                child: Text(_error!, style: const TextStyle(color: C.danger, fontSize: 13))),
+                child: Text(_error!, style: TextStyle(color: C.danger, fontSize: 13))),
             ],
             const SizedBox(height: 20),
             GradButton(label: 'Save Changes', icon: Icons.save_outlined, onPressed: _save, loading: _loading),
@@ -134,8 +134,8 @@ class _BuyerEditProfileState extends State<BuyerEditProfileScreen> {
     bool required = false, TextInputType kb = TextInputType.text,
   }) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     RichText(text: TextSpan(text: label,
-      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary),
-      children: required ? const [TextSpan(text: ' *', style: TextStyle(color: C.danger))] : null)),
+      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary),
+      children: required ? [TextSpan(text: ' *', style: TextStyle(color: C.danger))] : null)),
     const SizedBox(height: 5),
     TextFormField(controller: ctrl, keyboardType: kb,
       decoration: InputDecoration(hintText: label),
@@ -144,7 +144,7 @@ class _BuyerEditProfileState extends State<BuyerEditProfileScreen> {
 
   Widget _dropdown(String label, List<String> opts, String? value, void Function(String?) onChange) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary)),
+      Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary)),
       const SizedBox(height: 5),
       DropdownButtonFormField<String>(initialValue: value, onChanged: onChange,
         decoration: const InputDecoration(), hint: Text('Select $label'),

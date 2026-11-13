@@ -56,7 +56,7 @@ class _BuyerMessagesState extends State<BuyerMessagesScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         itemCount: _conversations.length,
                         separatorBuilder: (_, __) =>
-                            const Divider(height: 1, indent: 76, color: C.border),
+                            Divider(height: 1, indent: 76, color: C.border),
                         itemBuilder: (_, i) =>
                             _ConversationTile(
                               conv: _conversations[i],
@@ -102,7 +102,7 @@ class _ConversationTile extends StatelessWidget {
                 backgroundColor: C.b100,
                 child: Text(
                   _initials(conv.otherPartyName),
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 16, fontWeight: FontWeight.w700,
                       color: C.b700),
                 ),
@@ -170,7 +170,7 @@ class _ConversationTile extends StatelessWidget {
                     ),
                     child: Text(
                       conv.product!.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 10, color: C.b700,
                           fontWeight: FontWeight.w600),
                       overflow: TextOverflow.ellipsis,
@@ -327,7 +327,7 @@ class _ChatThreadState extends State<ChatThreadScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to send. Try again.'),
+          SnackBar(content: const Text('Failed to send. Try again.'),
               backgroundColor: C.danger));
       }
     } finally {
@@ -407,7 +407,7 @@ class _ChatThreadState extends State<ChatThreadScreen> {
                       left: 12, right: 8, top: 8,
                       bottom: MediaQuery.of(context).viewInsets.bottom + 8,
                     ),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border(top: BorderSide(color: C.border)),
                     ),
@@ -423,7 +423,7 @@ class _ChatThreadState extends State<ChatThreadScreen> {
                             style: const TextStyle(fontSize: 14),
                             decoration: InputDecoration(
                               hintText: 'Type a message...',
-                              hintStyle: const TextStyle(
+                              hintStyle: TextStyle(
                                   color: C.textMuted, fontSize: 13),
                               filled: true,
                               fillColor: C.bg,
@@ -498,7 +498,7 @@ class _Bubble extends StatelessWidget {
               backgroundColor: C.b100,
               child: Text(
                 msg.senderName.isNotEmpty ? msg.senderName[0].toUpperCase() : '?',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11, fontWeight: FontWeight.w700,
                     color: C.b700),
               ),
@@ -516,7 +516,7 @@ class _Bubble extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(left: 4, bottom: 3),
                     child: Text(msg.senderName,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 11, color: C.textMuted,
                             fontWeight: FontWeight.w600)),
                   ),
@@ -554,7 +554,7 @@ class _Bubble extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
                   child: Text(msg.time,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 10, color: C.textMuted)),
                 ),
               ],

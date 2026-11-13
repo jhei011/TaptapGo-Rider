@@ -8,6 +8,8 @@ import '../../widgets/bh_skeleton.dart';
 import '../../widgets/bh_empty_state.dart';
 import '../../widgets/bh_offline_banner.dart';
 import 'rider_job_widgets.dart';
+import '../../widgets/teal_pattern.dart';
+import '../../widgets/reveal.dart';
 
 /// Earnings, job history and COD to remit (Rider Modules R7).
 class CourierEarningsScreen extends StatefulWidget {
@@ -82,16 +84,11 @@ class _CourierEarningsState extends State<CourierEarningsScreen> {
 
     return Scaffold(
       backgroundColor: kSurfaceRaised,
-      appBar: BhAppBar(
+      appBar: const BhAppBar(
         title: 'Earnings',
+        subtitle: 'Your pay, history and cash to remit',
         showBack: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: _reload,
-          ),
-        ],
+        // Pull down on the page to refresh
       ),
       body: BhOfflineBanner(
         child: cp.loadingEarnings && cp.earnings == null
@@ -123,11 +120,12 @@ class _CourierEarningsState extends State<CourierEarningsScreen> {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(kSpace16),
-      children: [
+      // Sections fade in one after another
+      children: revealAll([
         // ── Totals ────────────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(kSpace16),
-          decoration: BoxDecoration(color: kBrand800, borderRadius: BorderRadius.circular(kRadiusLg)),
+          decoration: TealDecoration(BoxDecoration(gradient: kHeroGradient, borderRadius: BorderRadius.circular(kRadiusLg))),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Total Earnings', style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12)),
             Text(peso(n('total_earnings')),
@@ -186,7 +184,7 @@ class _CourierEarningsState extends State<CourierEarningsScreen> {
               ]),
             );
           }),
-      ],
+      ]),
     );
   }
 

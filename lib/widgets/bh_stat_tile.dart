@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_tokens.dart';
+import 'tap.dart';
 
-/// A metric tile used on dashboard screens.
+/// A metric tile used on dashboard screens, on TaptapShop's card (12 px corners, thin border,
+/// soft shadow).
 ///
-/// Shows an optional icon, a large [value], and a descriptive [label].
-/// Tap support is optional; when [onTap] is provided the tile gains
-/// button semantics and a minimum 48 dp touch target.
+/// Shows an optional icon, a large [value], and a descriptive [label]. When [onTap] is provided
+/// the tile gets button semantics, a 48 dp minimum touch target and the TaptapShop ripple.
 class BhStatTile extends StatelessWidget {
   const BhStatTile({
     super.key,
@@ -24,35 +25,29 @@ class BhStatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final content = Padding(
+      padding: const EdgeInsets.all(kSpace14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 20, color: iconColor ?? kBrand600),
+            const SizedBox(height: kSpace8),
+          ],
+          Text(value, style: kDisplayMd),
+          Text(label, style: kBodySm.copyWith(color: kTextSecondary), maxLines: 2),
+        ],
+      ),
+    );
+
     Widget tile = Container(
       decoration: BoxDecoration(
         color: kSurfaceBase,
-        border: Border.all(color: kBrand100),
+        border: Border.all(color: kBorderDefault),
         borderRadius: BorderRadius.circular(kRadiusLg),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0E0E2A38),
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
+        boxShadow: kCardShadow,
       ),
-      padding: const EdgeInsets.all(kSpace16),
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 20, color: iconColor ?? kBrand400),
-              const SizedBox(height: kSpace8),
-            ],
-            Text(value, style: kDisplayMd),
-            Text(label, style: kBodySm.copyWith(color: kTextSecondary)),
-          ],
-        ),
-      ),
+      child: onTap == null ? content : Tap(onTap: onTap, borderRadius: BorderRadius.circular(kRadiusLg), child: content),
     );
 
     if (onTap != null) {

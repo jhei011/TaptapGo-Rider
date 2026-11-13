@@ -1,8 +1,8 @@
+// Same as TaptapShop Flutter (lib/widgets/grad_button.dart), so both apps' cards, buttons and empty states match.
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 
-/// Primary gradient button — identical to TaptapShop Flutter's GradButton.
-/// Uses C.primaryGrad (#0E2A38 → #4A949C) as the active gradient.
+/// Primary gradient button — matches Laravel .btn-primary
 class GradButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -23,26 +23,15 @@ class GradButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final disabled = onPressed == null && !loading;
     return SizedBox(
       height: height,
       width: width ?? double.infinity,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: disabled
-              ? const LinearGradient(
-                  colors: [Color(0xFF9CA3AF), Color(0xFF6B7280)])
+          gradient: onPressed == null && !loading
+              ? LinearGradient(colors: [C.adapt(const Color(0xFF9CA3AF), const Color(0xFF8A8996)), C.adapt(const Color(0xFF6B7280), const Color(0xFFB3B2BD))])
               : C.primaryGrad,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: disabled
-              ? null
-              : const [
-                  BoxShadow(
-                    color: Color(0x300E2A38),
-                    blurRadius: 14,
-                    offset: Offset(0, 6),
-                  ),
-                ],
         ),
         child: ElevatedButton(
           onPressed: loading ? null : onPressed,
@@ -50,33 +39,24 @@ class GradButton extends StatelessWidget {
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             padding: EdgeInsets.zero,
           ),
           child: loading
               ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2.5, color: Colors.white),
+                  width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                 )
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 17),
-                      const SizedBox(width: 7),
-                    ],
+                    if (icon != null) ...[Icon(icon, size: 17), const SizedBox(width: 7)],
                     // Shortens instead of overflowing with large text sizes
                     Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 14),
-                      ),
+                      child: Text(label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                     ),
                   ],
                 ),

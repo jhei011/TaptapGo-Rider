@@ -4,6 +4,7 @@ import '../../core/theme/app_tokens.dart';
 import '../../models/rider_job.dart';
 import '../../providers/courier_provider.dart';
 import '../../widgets/bh_status_chip.dart';
+import '../../widgets/tap.dart';
 
 String peso(num v) {
   final parts = v.toStringAsFixed(2).split('.');
@@ -26,13 +27,13 @@ void showResult(BuildContext context, bool ok, String success, String? error) {
   ));
 }
 
+/// TaptapShop's card (FieldCard): white (dark grey in dark mode), 12 px corners, a thin border
+/// and a soft shadow.
 BoxDecoration cardDecoration() => BoxDecoration(
       color: kSurfaceBase,
       borderRadius: BorderRadius.circular(kRadiusLg),
-      border: Border.all(color: const Color(0xFFD8EFEC)),
-      boxShadow: const [
-        BoxShadow(color: Color(0x120E2A38), blurRadius: 12, offset: Offset(0, 4))
-      ],
+      border: Border.all(color: kBorderDefault),
+      boxShadow: kCardShadow,
     );
 
 // ── Active / completed job card ───────────────────────────────────────────────
@@ -46,7 +47,7 @@ class RiderJobCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: kSpace10),
       decoration: cardDecoration(),
-      child: InkWell(
+      child: Tap(
         borderRadius: BorderRadius.circular(kRadiusLg),
         onTap: () => Navigator.pushNamed(context, '/courier/job', arguments: job.id),
         child: Padding(
@@ -184,7 +185,7 @@ class _JobOfferCardState extends State<JobOfferCard> {
           Expanded(
             child: OutlinedButton(
               onPressed: _busy || expired || atLimit ? null : () => _respond(false),
-              style: OutlinedButton.styleFrom(foregroundColor: kTextSecondary, side: const BorderSide(color: kBorderDefault)),
+              style: OutlinedButton.styleFrom(foregroundColor: kTextSecondary, side: BorderSide(color: kBorderDefault)),
               child: const Text('Decline'),
             ),
           ),
@@ -192,7 +193,6 @@ class _JobOfferCardState extends State<JobOfferCard> {
           Expanded(
             child: ElevatedButton(
               onPressed: _busy || expired || atLimit ? null : () => _respond(true),
-              style: ElevatedButton.styleFrom(backgroundColor: kBrand600, foregroundColor: Colors.white, elevation: 0),
               child: const Text('Accept'),
             ),
           ),

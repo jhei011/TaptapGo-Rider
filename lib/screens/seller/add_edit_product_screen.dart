@@ -182,7 +182,7 @@ class _AddEditProductState extends State<AddEditProductScreen> {
               const SizedBox(height: 12),
               Container(padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: C.dangerBg, borderRadius: BorderRadius.circular(10)),
-                child: Text(_error!, style: const TextStyle(color: C.danger, fontSize: 13))),
+                child: Text(_error!, style: TextStyle(color: C.danger, fontSize: 13))),
             ],
             const SizedBox(height: 20),
             GradButton(
@@ -204,11 +204,11 @@ class _AddEditProductState extends State<AddEditProductScreen> {
     );
   }
 
-  Widget _imgPlaceholder() => const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+  Widget _imgPlaceholder() => Column(mainAxisAlignment: MainAxisAlignment.center, children: [
     Icon(Icons.cloud_upload_outlined, size: 36, color: C.b700),
-    SizedBox(height: 8),
+    const SizedBox(height: 8),
     Text('Tap to add image', style: TextStyle(color: C.b700, fontSize: 13, fontWeight: FontWeight.w500)),
-    SizedBox(height: 3),
+    const SizedBox(height: 3),
     Text('JPG, PNG. Max 5MB.', style: TextStyle(color: C.textMuted, fontSize: 11)),
   ]);
 
@@ -217,8 +217,8 @@ class _AddEditProductState extends State<AddEditProductScreen> {
     int maxLines = 1, String? hint, String? Function(String?)? validator,
   }) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     RichText(text: TextSpan(text: label,
-      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary),
-      children: required ? const [TextSpan(text: ' *', style: TextStyle(color: C.danger))] : null)),
+      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary),
+      children: required ? [TextSpan(text: ' *', style: TextStyle(color: C.danger))] : null)),
     const SizedBox(height: 5),
     TextFormField(controller: ctrl, keyboardType: kb, maxLines: maxLines,
       decoration: InputDecoration(hintText: hint ?? label),
@@ -226,7 +226,7 @@ class _AddEditProductState extends State<AddEditProductScreen> {
   ]);
 
   Widget _ddCategory(List categories) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary)),
+    Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: C.textPrimary)),
     const SizedBox(height: 5),
     DropdownButtonFormField<int>(
       initialValue: _categoryId, onChanged: (v) => setState(() => _categoryId = v),
@@ -239,7 +239,7 @@ class _AddEditProductState extends State<AddEditProductScreen> {
             DropdownMenuItem<int>(
               enabled: false,
               child: Text(cat.name,
-                  style: const TextStyle(fontWeight: FontWeight.w700, color: C.textSecondary, fontSize: 12))),
+                  style: TextStyle(fontWeight: FontWeight.w700, color: C.textSecondary, fontSize: 12))),
             for (final sub in cat.children)
               DropdownMenuItem<int>(value: sub.id, child: Text('  ${sub.name}')),
           ],

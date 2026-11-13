@@ -208,7 +208,7 @@ class _PageHeader extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
               color: C.textPrimary,
@@ -221,7 +221,7 @@ class _PageHeader extends StatelessWidget {
               loading
                   ? 'Loading...'
                   : '$count product${count != 1 ? 's' : ''} found',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 color: C.textSecondary,
               ),
@@ -239,12 +239,12 @@ class _ProductCard extends StatelessWidget {
 
   const _ProductCard({required this.product});
 
-  // Static decoration so it's not rebuilt on every frame
-  static const _decoration = BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.all(Radius.circular(12)),
+  // Card colours follow light and dark mode
+  static BoxDecoration get _decoration => BoxDecoration(
+    color: C.surface,
+    borderRadius: const BorderRadius.all(Radius.circular(12)),
     border: Border.fromBorderSide(BorderSide(color: C.border)),
-    boxShadow: [
+    boxShadow: const [
       BoxShadow(
           color: Color(0x080E2A38), blurRadius: 8, offset: Offset(0, 2)),
     ],
@@ -272,17 +272,17 @@ class _ProductCard extends StatelessWidget {
                         fit: BoxFit.cover,
                         placeholder: (_, __) => Container(
                             color: C.b50,
-                            child: const Center(
+                            child: Center(
                                 child: CircularProgressIndicator(
                                     strokeWidth: 1.5, color: C.b200))),
                         errorWidget: (_, __, ___) => Container(
                             color: C.b50,
-                            child: const Column(
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.broken_image_outlined,
                                     color: C.b200, size: 40),
-                                SizedBox(height: 6),
+                                const SizedBox(height: 6),
                                 Text('No Image',
                                     style: TextStyle(
                                         fontSize: 10,
@@ -294,12 +294,12 @@ class _ProductCard extends StatelessWidget {
                       )
                     : Container(
                         color: C.b50,
-                        child: const Column(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.image_not_supported_outlined,
                                 color: C.b200, size: 40),
-                            SizedBox(height: 6),
+                            const SizedBox(height: 6),
                             Text('No Image',
                                 style: TextStyle(
                                     fontSize: 10,
@@ -356,7 +356,7 @@ class _ProductCard extends StatelessWidget {
                 children: [
               Text(
                 p.name,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: C.textPrimary),
@@ -366,7 +366,7 @@ class _ProductCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '₱${p.price.toStringAsFixed(2)}',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: C.b700),

@@ -8,6 +8,9 @@ import '../../widgets/bh_app_bar.dart';
 import '../../widgets/bh_offline_banner.dart';
 import '../../widgets/field_card.dart';
 import 'rider_profile_widgets.dart';
+import '../../widgets/teal_pattern.dart';
+import '../../widgets/confirm_logout.dart';
+import '../../widgets/reveal.dart';
 
 class CourierProfileScreen extends StatefulWidget {
   const CourierProfileScreen({super.key});
@@ -35,18 +38,19 @@ class _CourierProfileState extends State<CourierProfileScreen> {
 
     return Scaffold(
       backgroundColor: kSurfaceRaised,
-      appBar: const BhAppBar(title: 'My Profile', showBack: false),
+      appBar: const BhAppBar(title: 'My Profile', subtitle: 'Account, vehicle and documents', showBack: false),
       body: BhOfflineBanner(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(kSpace16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+            // Cards fade in one after another
+            children: revealAll([
               // ── Avatar / name / status card ──────────────────────────────
               Container(
                 padding: const EdgeInsets.all(kSpace20),
-                decoration: BoxDecoration(
-                  color: kBrand800,
+                decoration: TealDecoration(BoxDecoration(
+                  gradient: kHeroGradient,
                   borderRadius: BorderRadius.circular(kRadiusLg),
                   boxShadow: const [
                     BoxShadow(
@@ -54,7 +58,7 @@ class _CourierProfileState extends State<CourierProfileScreen> {
                         blurRadius: 12,
                         offset: Offset(0, 4))
                   ],
-                ),
+                )),
                 child: Column(children: [
                   // Avatar circle
                   Container(
@@ -211,7 +215,7 @@ class _CourierProfileState extends State<CourierProfileScreen> {
                 ),
               ),
               const SizedBox(height: kSpace8),
-            ],
+            ]),
           ),
         ),
       ),
@@ -299,25 +303,10 @@ class _CourierProfileState extends State<CourierProfileScreen> {
       Text('—', style: kBodySm.copyWith(color: kTextMuted));
 
   Future<void> _logout(BuildContext ctx, AuthProvider auth) async {
-    final ok = await showDialog<bool>(
-      context: ctx,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(kRadiusLg)),
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Log Out',
-                  style: TextStyle(color: kActionDestructive))),
-        ],
-      ),
-    );
-    if (ok == true && ctx.mounted) {
+    // TaptapShop's "Log out?" dialog
+    final ok = await confirmLogoutDialog(ctx,
+        message: "You'll go Offline and need to sign in again to take jobs.");
+    if (ok && ctx.mounted) {
       final cp = ctx.read<CourierProvider>();
       // Leave the shift Offline so dispatch does not send offers to a logged-out rider
       await cp.goOffline();
@@ -423,7 +412,7 @@ class _EarningsSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            const Icon(Icons.account_balance_wallet_outlined,
+            Icon(Icons.account_balance_wallet_outlined,
                 size: 18, color: kBrand700),
             const SizedBox(width: kSpace8),
             Text('Earnings & Statistics',
@@ -435,10 +424,10 @@ class _EarningsSummaryCard extends StatelessWidget {
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: kSpace14, vertical: 10),
-            decoration: BoxDecoration(
-              color: kBrand800,
+            decoration: TealDecoration(BoxDecoration(
+              gradient: kHeroGradient,
               borderRadius: BorderRadius.circular(kRadiusMd),
-            ),
+            )),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -484,7 +473,7 @@ class _EarningsSummaryCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(children: [
-                  const Icon(Icons.check_circle_outline,
+                  Icon(Icons.check_circle_outline,
                       size: 14, color: kBrand700),
                   const SizedBox(width: kSpace6),
                   Text('Total Deliveries Completed',

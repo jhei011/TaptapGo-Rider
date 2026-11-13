@@ -72,7 +72,7 @@ class _SellerOrdersState extends State<SellerOrdersScreen> {
                       ),
                       child: Row(children: [
                         const SizedBox(width: 10),
-                        const Icon(Icons.search,
+                        Icon(Icons.search,
                             size: 16, color: C.textMuted),
                         const SizedBox(width: 6),
                         Expanded(
@@ -80,7 +80,7 @@ class _SellerOrdersState extends State<SellerOrdersScreen> {
                             onChanged: (v) =>
                                 setState(() => _searchQuery = v),
                             style: const TextStyle(fontSize: 13),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'Search order # or buyer...',
                               hintStyle: TextStyle(
                                   color: C.textMuted, fontSize: 12),
@@ -107,7 +107,7 @@ class _SellerOrdersState extends State<SellerOrdersScreen> {
                       value: _filterStatus,
                       underline: const SizedBox(),
                       isDense: true,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 12, color: C.textPrimary),
                       items: const [
                         DropdownMenuItem(
@@ -194,7 +194,7 @@ class _OrderCard extends StatelessWidget {
             width: 40, height: 40,
             decoration: BoxDecoration(
                 color: C.b50, borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.receipt_outlined,
+            child: Icon(Icons.receipt_outlined,
                 size: 18, color: C.b700),
           ),
           const SizedBox(width: 10),
@@ -203,17 +203,17 @@ class _OrderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Order #${order.id}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                         color: C.textPrimary)),
                 if (order.createdAt != null)
                   Text(_fmt(order.createdAt!),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11, color: C.textMuted)),
                 if (order.buyerName != null)
                   Text(order.buyerName!,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 12, color: C.textSecondary)),
               ],
             ),
@@ -245,11 +245,11 @@ class _OrderCard extends StatelessWidget {
             ? order.items.map((item) => _ItemRow(item: item))
             : [
                 Text('${order.itemsCount ?? 0} item(s)',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 13, color: C.textSecondary))
               ],
 
-        const Divider(height: 18, color: C.border),
+        Divider(height: 18, color: C.border),
 
         // ── Order notes ───────────────────────────────────────────────
         if (order.notes?.isNotEmpty == true) ...[
@@ -277,7 +277,7 @@ class _OrderCard extends StatelessWidget {
                           color: Color(0xFFA15C1F))),
                   const SizedBox(height: 2),
                   Text(order.notes!,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 12, color: C.textPrimary)),
                 ]),
               ),
@@ -299,7 +299,7 @@ class _OrderCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(order.shortAddress,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 11, color: C.textSecondary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
@@ -311,7 +311,7 @@ class _OrderCard extends StatelessWidget {
                     Text(
                       '${AppConstants.orderStatusLabel(order.status)} · '
                       '${formatTime(order.shipment!.latestTime)} · ${order.shipment!.trackingNumber}',
-                      style: const TextStyle(fontSize: 11, color: C.textSecondary),
+                      style: TextStyle(fontSize: 11, color: C.textSecondary),
                     ),
                   ],
                   if (!order.isCancelled) ...[
@@ -322,14 +322,14 @@ class _OrderCard extends StatelessWidget {
                     _finRow('Commission (10%)',
                         '− ₱${order.commission.toStringAsFixed(2)}',
                         color: C.danger),
-                    const Divider(height: 10, color: C.border),
+                    Divider(height: 10, color: C.border),
                     Row(children: [
-                      const Text('Net Earnings  ',
+                      Text('Net Earnings  ',
                           style: TextStyle(
                               fontSize: 11, color: C.textMuted)),
                       Text(
                         '₱${(order.subtotal - order.commission).toStringAsFixed(2)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                             color: C.b700),
@@ -354,7 +354,7 @@ class _OrderCard extends StatelessWidget {
                   value: order.status,
                   underline: const SizedBox(),
                   isDense: true,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 12,
                       color: C.textPrimary,
                       fontWeight: FontWeight.w500),
@@ -397,7 +397,7 @@ class _OrderCard extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 1),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-      Text(label, style: const TextStyle(fontSize: 11, color: C.textMuted)),
+      Text(label, style: TextStyle(fontSize: 11, color: C.textMuted)),
       Text(value, style: TextStyle(
           fontSize: 12, fontWeight: FontWeight.w600,
           color: color ?? C.textPrimary)),
@@ -432,7 +432,7 @@ class _ItemRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: C.b100),
         ),
-        child: const Icon(Icons.image_outlined, color: C.b200, size: 22),
+        child: Icon(Icons.image_outlined, color: C.b200, size: 22),
       ),
       const SizedBox(width: 10),
       Expanded(
@@ -444,7 +444,7 @@ class _ItemRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
           Text('x${item.quantity} @ ₱${item.productPrice.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 11, color: C.textMuted)),
+              style: TextStyle(fontSize: 11, color: C.textMuted)),
         ]),
       ),
       Text('₱${item.subtotal.toStringAsFixed(2)}',
