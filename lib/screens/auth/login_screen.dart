@@ -183,9 +183,9 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Image.asset(
               'assets/images/taptapgo_app_icon.png',
-              // The scooter cut-out is wider than tall; as large as TaptapShop's login logo
-              height: 48,
-              width: 70,
+              // The app-icon tile, as large as TaptapShop's login logo
+              height: 46,
+              width: 46,
               fit: BoxFit.contain,
               filterQuality: FilterQuality.medium,
             ),
