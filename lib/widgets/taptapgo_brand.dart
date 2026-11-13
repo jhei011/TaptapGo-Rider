@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// rider-app counterpart of TaptapShop's TaptapBrand, using the same wordmark as the login screen.
 class TaptapGoBrand extends StatelessWidget {
   final double logoSize;
-  const TaptapGoBrand({super.key, this.logoSize = 32});
+  const TaptapGoBrand({super.key, this.logoSize = 44});
 
   static const logoAsset = 'assets/images/taptapgo_app_icon.png';
 
@@ -13,7 +13,7 @@ class TaptapGoBrand extends StatelessWidget {
         label: 'TaptapGo',
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           // The scooter cut-out (transparent background) is wider than tall: give it room
-          Image.asset(logoAsset, width: logoSize * 1.4, height: logoSize, fit: BoxFit.contain,
+          Image.asset(logoAsset, width: logoSize * 1.45, height: logoSize, fit: BoxFit.contain,
               filterQuality: FilterQuality.medium),
           const SizedBox(width: 8),
           RichText(
