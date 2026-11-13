@@ -10,6 +10,7 @@ import 'package:taptap_go/core/theme/app_theme.dart';
 import 'package:taptap_go/providers/auth_provider.dart';
 import 'package:taptap_go/screens/auth/login_screen.dart';
 import 'package:taptap_go/screens/linehaul/linehaul_shell.dart';
+import 'package:taptap_go/screens/linehaul/linehaul_trips_screen.dart';
 
 /// One login opens the Rider panel (role courier) or the Linehaul Courier panel (role linehaul), and the linehaul trip flow
 /// (Loading → Start Trip → On the road → Arrived → Unloading) against a fake API.
@@ -95,6 +96,10 @@ void main() {
   }
 
   testWidgets('linehaul panel: home shows the current trip; the courier starts it and reports arriving', (tester) async {
+    // A phone screen (the trip screen also has a Navigate button above Start Trip)
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
     FlutterSecureStorage.setMockInitialValues({'auth_token': 'tok'});
     var status = 'draft';
     final calls = <String>[];
@@ -172,6 +177,70 @@ void main() {
               _json({'message': 'Arrived at HUB-BUL. The hub will receive the parcels.', 'trip': _trip(status)}),
             _ => _json({'message': 'Forbidden'}, 403),
           };
+        }));
+  });
+
+  Future<void> openTrip(WidgetTester tester, Map<String, dynamic> Function() trip) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
+    FlutterSecureStorage.setMockInitialValues({'auth_token': 'tok'});
+    await tester.pumpWidget(_app(const LinehaulTripDetailScreen(tripId: 21)));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('trip load is shown against the truck capacity, in red with a note when over it', (tester) async {
+    final trip = {..._trip('draft'), 'total_weight_kg': 3200.5, 'capacity_kg': 3000, 'over_capacity': true};
+    await http.runWithClient(() async {
+      await openTrip(tester, () => trip);
+      expect(find.text('3200.5 of 3000 kg'), findsOneWidget);
+      expect(find.byKey(const Key('overCapacity')), findsOneWidget);
+    }, () => MockClient((r) async => _json(trip)));
+  });
+
+  testWidgets('within capacity: "6.5 of 3000 kg" and no warning', (tester) async {
+    final trip = {..._trip('draft'), 'capacity_kg': 3000, 'over_capacity': false};
+    await http.runWithClient(() async {
+      await openTrip(tester, () => trip);
+      expect(find.text('6.5 of 3000 kg'), findsOneWidget);
+      expect(find.byKey(const Key('overCapacity')), findsNothing);
+    }, () => MockClient((r) async => _json(trip)));
+  });
+
+  for (final (status, target) in [('draft', 'HUB-QC'), ('dispatched', 'HUB-BUL'), ('receiving', null)]) {
+    testWidgets('Navigate goes to ${target ?? 'nowhere'} while the trip is $status', (tester) async {
+      await http.runWithClient(() async {
+        await openTrip(tester, () => _trip(status));
+        if (target == null) {
+          expect(find.byKey(const Key('navigateHub')), findsNothing);
+        } else {
+          expect(find.text('Navigate to $target'), findsOneWidget);
+        }
+      }, () => MockClient((r) async => _json(_trip(status))));
+    });
+  }
+
+  testWidgets('an open trip refreshes by itself: a parcel added while loading appears without pulling down', (tester) async {
+    var trip = _trip('draft');
+    var gets = 0;
+    await http.runWithClient(() async {
+      await openTrip(tester, () => trip);
+      expect(find.text('Parcels on this trip (2)'), findsOneWidget);
+
+      // Hub staff load a third parcel
+      trip = {
+        ...trip,
+        'parcel_count': 3,
+        'parcels': [...(trip['parcels'] as List), {'tracking_number': 'TRK-2001003', 'weight_kg': 1, 'received': false}],
+      };
+      await tester.pump(const Duration(seconds: 31));
+      await tester.pumpAndSettle();
+      expect(find.text('Parcels on this trip (3)'), findsOneWidget);
+      expect(find.text('TRK-2001003'), findsOneWidget);
+      expect(gets, greaterThanOrEqualTo(2));
+    }, () => MockClient((r) async {
+          gets++;
+          return _json(trip);
         }));
   });
 }

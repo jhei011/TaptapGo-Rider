@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/api.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../widgets/bh_app_bar.dart';
@@ -21,10 +24,15 @@ class LinehaulTripsScreen extends StatefulWidget {
   State<LinehaulTripsScreen> createState() => LinehaulTripsScreenState();
 }
 
-class LinehaulTripsScreenState extends State<LinehaulTripsScreen> {
+/// How often open trips are refreshed while the app is in front: hub staff keep adding
+/// parcels while a truck loads, and the destination hub ticks them off while it unloads.
+const kTripRefresh = Duration(seconds: 30);
+
+class LinehaulTripsScreenState extends State<LinehaulTripsScreen> with WidgetsBindingObserver {
   List<Map<String, dynamic>>? _trips;
   String? _error;
   bool _loading = true;
+  Timer? _poll;
 
   bool get _history => widget.scope == 'history';
 
@@ -32,10 +40,27 @@ class LinehaulTripsScreenState extends State<LinehaulTripsScreen> {
   void initState() {
     super.initState();
     reload();
+    if (!_history) {
+      WidgetsBinding.instance.addObserver(this);
+      _poll = Timer.periodic(kTripRefresh, (_) => reload(quiet: true));
+    }
   }
 
-  Future<void> reload() async {
-    setState(() { _loading = true; _error = null; });
+  @override
+  void dispose() {
+    _poll?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) reload(quiet: true);
+  }
+
+  /// [quiet]: a background refresh keeps the list on screen and ignores errors.
+  Future<void> reload({bool quiet = false}) async {
+    if (!quiet) setState(() { _loading = true; _error = null; });
     try {
       final d = await Api.get('/linehaul/trips', query: {'scope': widget.scope}) as List;
       if (!mounted) return;
@@ -117,6 +142,8 @@ class LinehaulTripCard extends StatelessWidget {
     final count = (trip['parcel_count'] as num?)?.toInt() ?? 0;
     final received = (trip['received_count'] as num?)?.toInt() ?? 0;
     final weight = (trip['total_weight_kg'] as num?)?.toDouble() ?? 0;
+    final capacity = (trip['capacity_kg'] as num?)?.toInt();
+    final over = trip['over_capacity'] == true;
     final status = trip['status'] as String? ?? '';
     return Tap(
       onTap: onTap,
@@ -135,18 +162,26 @@ class LinehaulTripCard extends StatelessWidget {
           Wrap(spacing: kSpace16, runSpacing: kSpace6, children: [
             _fact(Icons.inventory_2_outlined, status == 'receiving' || status == 'closed'
                 ? '$received of $count received' : '$count parcel${count == 1 ? '' : 's'}'),
-            _fact(Icons.scale_outlined, '${_kg(weight)} kg'),
+            // The load against the truck's capacity; red when hub staff loaded more than it carries
+            _fact(over ? Icons.warning_amber_rounded : Icons.scale_outlined,
+                capacity == null ? '${_kg(weight)} kg' : '${_kg(weight)} of ${_kg(capacity.toDouble())} kg',
+                key: const Key('tripLoad'), color: over ? kStatusFailedFg : null),
             if ((trip['vehicle_plate'] as String?)?.isNotEmpty ?? false) _fact(Icons.pin_outlined, trip['vehicle_plate'] as String),
           ]),
+          if (over) ...[
+            const SizedBox(height: kSpace8),
+            Text('Over your truck\'s capacity. Ask the hub to take parcels off before you leave.',
+                key: const Key('overCapacity'), style: kBodySm.copyWith(color: kStatusFailedFg)),
+          ],
         ]),
       ),
     );
   }
 
-  Widget _fact(IconData icon, String text) => Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 16, color: kTextMuted),
+  Widget _fact(IconData icon, String text, {Key? key, Color? color}) => Row(key: key, mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 16, color: color ?? kTextMuted),
         const SizedBox(width: kSpace4),
-        Text(text, style: kBodySm.copyWith(color: kTextSecondary)),
+        Text(text, style: kBodySm.copyWith(color: color ?? kTextSecondary, fontWeight: color == null ? null : FontWeight.w600)),
       ]);
 }
 
@@ -211,11 +246,36 @@ class _LinehaulTripDetailScreenState extends State<LinehaulTripDetailScreen> {
   Map<String, dynamic>? _trip;
   String? _error;
   bool _busy = false;
+  Timer? _poll;
 
   @override
   void initState() {
     super.initState();
     _load();
+    // Parcels added while loading, and ticked off while unloading, show up without pulling down
+    _poll = Timer.periodic(kTripRefresh, (_) {
+      final status = _trip?['status'];
+      if (!_busy && (status == null || status == 'draft' || status == 'dispatched' || status == 'receiving')) _load();
+    });
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  /// Opens the hub in the phone's maps app (as the rider's Navigate does).
+  Future<void> _navigate(Map hub) async {
+    final address = (hub['address'] as String?)?.trim();
+    final query = [hub['name'], if (address != null && address.isNotEmpty) address].join(', ');
+    final uri = Platform.isAndroid
+        ? Uri.parse('geo:0,0?q=${Uri.encodeComponent(query)}')
+        : Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}');
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No maps app on this phone can open this.')));
+    }
   }
 
   Future<void> _load() async {
@@ -290,7 +350,31 @@ class _LinehaulTripDetailScreenState extends State<LinehaulTripDetailScreen> {
     );
   }
 
+  /// Navigate to the origin hub while the truck loads, to the destination once on the road.
+  Widget? _navigateButton(Map<String, dynamic> trip) {
+    final hub = switch (trip['status']) {
+      'draft' => trip['origin'] as Map?,
+      'dispatched' => trip['destination'] as Map?,
+      _ => null,
+    };
+    if (hub == null) return null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: kSpace10),
+      child: OutlinedButton.icon(
+        key: const Key('navigateHub'),
+        icon: const Icon(Icons.navigation_outlined, size: 18),
+        label: Text('Navigate to ${hub['code'] ?? 'hub'}'),
+        onPressed: () => _navigate(hub),
+      ),
+    );
+  }
+
   List<Widget> _actions(Map<String, dynamic> trip) {
+    final nav = _navigateButton(trip);
+    return [if (nav != null) nav, ..._stepActions(trip)];
+  }
+
+  List<Widget> _stepActions(Map<String, dynamic> trip) {
     final dest = (trip['destination'] as Map?)?['code'] ?? 'the next hub';
     final origin = (trip['origin'] as Map?)?['code'] ?? 'the hub';
     if (trip['can_depart'] == true) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/api.dart';
@@ -23,16 +24,32 @@ class LinehaulHomeScreen extends StatefulWidget {
   State<LinehaulHomeScreen> createState() => LinehaulHomeScreenState();
 }
 
-class LinehaulHomeScreenState extends State<LinehaulHomeScreen> {
+class LinehaulHomeScreenState extends State<LinehaulHomeScreen> with WidgetsBindingObserver {
   Map<String, dynamic>? _home;
   List<Map<String, dynamic>> _trips = const [];
   String? _error;
   bool _loading = true;
+  Timer? _poll;
 
   @override
   void initState() {
     super.initState();
     _load();
+    // Duty status and current trips change when hub staff load the truck
+    WidgetsBinding.instance.addObserver(this);
+    _poll = Timer.periodic(kTripRefresh, (_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _load();
   }
 
   Future<void> reload() => _load();
