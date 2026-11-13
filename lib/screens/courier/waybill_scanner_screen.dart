@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart' show Geolocator;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_tokens.dart';
+import '../../models/rider_job.dart';
 import '../../providers/courier_provider.dart';
 import '../../widgets/bh_app_bar.dart';
 import 'rider_job_widgets.dart';
@@ -101,10 +102,17 @@ class _WaybillScannerScreenState extends State<WaybillScannerScreen> {
     setState(() {
       _busy      = false;
       _resultOk  = job != null;
-      _result    = job != null
-          ? 'Picked up ${job.trackingNumber}. You earned ${peso(job.earned)}.'
-          : (cp.error ?? 'The pickup could not be confirmed.');
+      _result    = job != null ? _pickedUpText(job) : (cp.error ?? 'The pickup could not be confirmed.');
     });
+  }
+
+  /// Pay counts once the order reaches the buyer (server: RiderJobService::earned), so right
+  /// after a pickup "earned" is still 0: say what is coming instead of "You earned ₱0.00",
+  /// the same as the job screen.
+  static String _pickedUpText(RiderJob job) {
+    if (job.earned > 0) return 'Picked up ${job.trackingNumber}. You earned ${peso(job.earned)}.';
+    if (job.pay > 0) return 'Picked up ${job.trackingNumber}. Your ${peso(job.pay)} pay counts once the buyer receives the order.';
+    return 'Picked up ${job.trackingNumber}.';
   }
 
   void _scanNext() => setState(() { _result = null; _typed.clear(); });

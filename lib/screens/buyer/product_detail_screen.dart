@@ -49,6 +49,9 @@ class _ProdDetailState extends State<ProductDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: const Text('Added to cart!'),
         backgroundColor: C.b700,
+        // With an action a SnackBar now stays until dismissed; let it go by itself
+        persist: false,
+        duration: const Duration(seconds: 3),
         action: SnackBarAction(label: 'View Cart', textColor: C.grad4,
             onPressed: () => Navigator.pop(context)),
       ));

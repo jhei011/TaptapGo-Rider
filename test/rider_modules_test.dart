@@ -430,6 +430,28 @@ void main() {
     ..['earned'] = 30
     ..['result'] = 'Picked up';
 
+  testWidgets('a fresh pickup (pay not earned yet) says what is coming, not "You earned ₱0.00"', (tester) async {
+    // As the real server answers right after a pickup: pay 30, earned 0 until the buyer receives it
+    final fresh = job(status: 'done', shipment: 'picked_up')..['result'] = 'Picked up';
+    final api = FakeApi({
+      'GET /courier/jobs': {'active': [job()], 'recent': []},
+      'POST /courier/jobs/7/pickup': {'message': 'Parcel picked up.', 'job': fresh},
+    });
+    await http.runWithClient(() async {
+      late void Function(String) scan;
+      await pumpApp(tester, api, WaybillScannerScreen(
+          confirmPickups: true,
+          cameraBuilder: (context, onCode) {
+            scan = onCode;
+            return const SizedBox.expand();
+          }));
+      scan('TRK-1234567');
+      await tester.pumpAndSettle();
+      expect(find.text('Picked up TRK-1234567. Your ₱30.00 pay counts once the buyer receives the order.'), findsOneWidget);
+      expect(find.textContaining('You earned ₱0.00'), findsNothing);
+    }, () => api.client);
+  });
+
   testWidgets('RID-PICK-002/005: a scanned waybill confirms the pickup; scanning it again shows already picked up', (tester) async {
     final api = FakeApi({
       'GET /courier/jobs': {'active': [job()], 'recent': []},
@@ -710,6 +732,11 @@ void main() {
       await http.runWithClient(() async {
         await cp.loadDashboard();
         await settle();
+        // Opening the app retries the saved delivery in the background ("Sending…"); wait until
+        // that attempt has failed (no internet) instead of a fixed 20 ms, which a busy machine misses.
+        for (var i = 0; i < 200 && cp.syncing; i++) {
+          await settle();
+        }
       }, () => api.client);
     });
     addTearDown(() => dir.deleteSync(recursive: true));
