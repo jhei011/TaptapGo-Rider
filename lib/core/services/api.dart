@@ -39,7 +39,7 @@ class NetworkError implements Exception {
 }
 
 /// Why the app signed the rider out without being asked to.
-enum SessionEndReason { expired, accessRevoked, idle }
+enum SessionEndReason { expired, accessRevoked }
 
 class SessionEnded {
   final SessionEndReason reason;

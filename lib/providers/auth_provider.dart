@@ -8,8 +8,6 @@ import '../models/user.dart';
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
 class AuthProvider extends ChangeNotifier {
-  static const _riderIdleTimeout = Duration(minutes: 30);
-  Timer? _idleTimer;
   StreamSubscription<SessionEnded>? _sessionWatch;
 
   User? _user;
@@ -67,7 +65,6 @@ class AuthProvider extends ChangeNotifier {
       _offline = false;
       await Api.saveUser(d).catchError((_) {});
       _status = AuthStatus.authenticated;
-      resetIdleTimer();
       notifyListeners();
     } on ApiError catch (_) {
       // The server refused the saved login (expired or revoked token, or a deleted account)
@@ -83,7 +80,6 @@ class AuthProvider extends ChangeNotifier {
         _user = u;
         _offline = true;
         _status = AuthStatus.authenticated;
-        resetIdleTimer();
       } else {
         _status = AuthStatus.unauthenticated;
         _error = 'No connection to the server. Check your internet and log in again.';
@@ -123,7 +119,6 @@ class AuthProvider extends ChangeNotifier {
       _user = r.user;
       _offline = false;
       _status = AuthStatus.authenticated;
-      resetIdleTimer();
       _loading = false; notifyListeners();
       return true;
     } on ApiError catch (e) {
@@ -139,8 +134,6 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    _idleTimer?.cancel();
-    _idleTimer = null;
     await AuthService.logout();
     await Api.deleteSavedUser().catchError((_) {});
     _user = null; _offline = false; _status = AuthStatus.unauthenticated; notifyListeners();
@@ -149,27 +142,12 @@ class AuthProvider extends ChangeNotifier {
   void updateUser(User u) { _user = u; notifyListeners(); }
   void clearError()       { _error = null; notifyListeners(); }
 
-  void resetIdleTimer() {
-    final role = _user?.role;
-    if (!_isRider(role)) return;
-    _idleTimer?.cancel();
-    _idleTimer = Timer(_riderIdleTimeout, _idleLogout);
-  }
-
-  Future<void> _idleLogout() async {
-    _idleTimer = null;
-    if (_status != AuthStatus.authenticated) return;
-    if (!_isRider(_user?.role)) return;
-    await _endSession('You were logged out after 30 minutes without activity.', revoke: true);
-  }
 
   /// Signs out without the rider asking: [revoke] also ends the token on the server
   /// (best effort); [forced] tells the app root to leave the current screen.
   Future<void> _endSession(String message, {required bool revoke, bool forced = true}) async {
     if (_ending || (forced && _status != AuthStatus.authenticated)) return;
     _ending = true;
-    _idleTimer?.cancel();
-    _idleTimer = null;
     try {
       if (revoke) {
         await AuthService.logout();
@@ -196,7 +174,6 @@ class AuthProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _idleTimer?.cancel();
     _sessionWatch?.cancel();
     super.dispose();
   }

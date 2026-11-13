@@ -81,9 +81,9 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
       child: ForcedLogoutWatcher(
         navigatorKey: _navigatorKey,
         child: Consumer<ThemeService>(
-        builder: (context, themeService, _) => Listener(
-          onPointerDown: (_) => context.read<AuthProvider>().resetIdleTimer(),
-          child: MaterialApp(
+        // No automatic logout after inactivity: a rider stays signed in until they log out,
+        // the login expires, or their company suspends or removes them
+        builder: (context, themeService, _) => MaterialApp(
           navigatorKey: _navigatorKey,
           title: 'TaptapGo',
           debugShowCheckedModeBanner: false,
@@ -189,15 +189,14 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
             return null;
           },
         ),
-        ),
       ),
       ),
     );
   }
 }
 
-/// When the app signs the rider out on its own (expired login, suspended account,
-/// 30 minutes idle), stops the rider's background polling and returns to the login
+/// When the app signs the rider out on its own (expired login, suspended or removed
+/// account), stops the rider's background polling and returns to the login
 /// screen, which shows the reason.
 class ForcedLogoutWatcher extends StatefulWidget {
   final GlobalKey<NavigatorState> navigatorKey;
