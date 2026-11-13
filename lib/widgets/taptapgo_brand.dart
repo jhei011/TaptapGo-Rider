@@ -12,10 +12,9 @@ class TaptapGoBrand extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
         label: 'TaptapGo',
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(logoSize * 0.22),
-            child: Image.asset(logoAsset, width: logoSize, height: logoSize, fit: BoxFit.cover),
-          ),
+          // The scooter cut-out (transparent background) is wider than tall: give it room
+          Image.asset(logoAsset, width: logoSize * 1.4, height: logoSize, fit: BoxFit.contain,
+              filterQuality: FilterQuality.medium),
           const SizedBox(width: 8),
           RichText(
             text: const TextSpan(children: [
