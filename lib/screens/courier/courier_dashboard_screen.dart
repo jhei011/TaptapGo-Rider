@@ -576,10 +576,17 @@ class _LiveDotState extends State<_LiveDot> with SingleTickerProviderStateMixin 
   late final AnimationController _pulse =
       AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
 
+  bool _firstDependencies = true;
+
+  // Not in initState: _start reads MediaQuery, which may only be read once the widget is
+  // in the tree. Opening the dashboard while already Online crashed the screen.
   @override
-  void initState() {
-    super.initState();
-    if (widget.online) _start();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_firstDependencies) {
+      _firstDependencies = false;
+      if (widget.online) _start();
+    }
   }
 
   @override

@@ -67,6 +67,9 @@ void main() {
           final auth = AuthProvider();
           final cp = CourierProvider();
           await tester.runAsync(auth.boot);
+          // Already Online when the screen opens (as after reopening the app): the green
+          // dot's first frame crashed the dashboard before (MediaQuery read in initState)
+          if (online) await tester.runAsync(cp.loadDashboard);
           await tester.pumpWidget(MultiProvider(
             providers: [ChangeNotifierProvider.value(value: auth), ChangeNotifierProvider.value(value: cp)],
             child: MaterialApp(
