@@ -644,7 +644,11 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
                 decoration: InputDecoration(
                   labelText: 'COD collected (${peso(job.codAmount)})',
-                  helperText: 'Must match the order total exactly.',
+                  // The cash to collect, not the order total: on a split order the rest was paid with TapTapPay
+                  helperText: job.paidWithWallet
+                      ? 'Cash part only. ${peso(job.walletPaid)} was already paid with TapTapPay.'
+                      : 'Must match the cash to collect exactly.',
+                  helperMaxLines: 2,
                   prefixText: '₱',
                   border: const OutlineInputBorder(),
                 ),

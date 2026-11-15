@@ -63,6 +63,9 @@ void main() {
       expect(find.text('₱860.00'), findsOneWidget);
       // the COD field asks for the cash part only
       expect(find.textContaining('COD collected (₱860.00)'), findsOneWidget);
+      // …and says so, instead of "Must match the order total" (found on the emulator)
+      expect(find.text('Cash part only. ₱200.00 was already paid with TapTapPay.'), findsOneWidget);
+      expect(find.textContaining('order total exactly'), findsNothing);
     }, () => api.client);
   });
 

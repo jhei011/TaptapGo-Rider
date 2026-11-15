@@ -15,9 +15,17 @@ void main() {
 
     test('one centavo under or over is refused', () {
       expect(DeliveryRules.codProblem(expected: 500, entered: '499.99'),
-          'The COD amount must match the order exactly (₱500.00).');
+          'Collect exactly ₱500.00 in cash. The amount must match to the centavo.');
       expect(DeliveryRules.codProblem(expected: 500, entered: '500.01'),
-          'The COD amount must match the order exactly (₱500.00).');
+          'Collect exactly ₱500.00 in cash. The amount must match to the centavo.');
+    });
+
+    test('a split order (₱1,060 total, ₱360 TapTapPay): only ₱700 is accepted, not the total', () {
+      expect(DeliveryRules.codProblem(expected: 700, entered: '1060'),
+          'Collect exactly ₱700.00 in cash. The amount must match to the centavo.');
+      expect(DeliveryRules.codProblem(expected: 700, entered: '700'), isNull);
+      // floats that are not exact in binary still compare equal in centavos
+      expect(DeliveryRules.codProblem(expected: 0.1 + 0.2, entered: '0.30'), isNull);
     });
 
     test('an empty or unreadable amount asks for it again', () {
