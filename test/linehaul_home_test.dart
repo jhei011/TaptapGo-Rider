@@ -79,4 +79,24 @@ void main() {
       expect(calls, ['GET /me']);
     }, () => fakeApi(calls));
   });
+
+  testWidgets('no logistics company on record: the panel shows TaptapGo, like the Rider Panel', (tester) async {
+    for (final company in [null, '', '  ']) {
+      final noCompany = Map<String, Object?>.from(home)..['logistics_company'] = company;
+      await http.runWithClient(() async {
+        await tester.pumpWidget(ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
+          child: MaterialApp(theme: AppTheme.light, home: LinehaulHomeScreen(key: UniqueKey())),
+        ));
+        await tester.pumpAndSettle();
+        expect(tester.widget<Text>(find.byKey(const Key('linehaulCompany'))).data, 'TaptapGo', reason: '$company');
+      }, () => MockClient((request) async {
+            final key = '${request.method} ${request.url.path.replaceFirst('/api', '')}';
+            final body = key == 'GET /linehaul/home' ? noCompany : key == 'GET /linehaul/trips' ? <Object>[] : null;
+            return body == null
+                ? http.Response(jsonEncode({'message': 'Forbidden'}), 403)
+                : http.Response.bytes(utf8.encode(jsonEncode(body)), 200, headers: {'content-type': 'application/json; charset=utf-8'});
+          }));
+    }
+  });
 }

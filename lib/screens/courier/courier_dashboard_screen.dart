@@ -183,8 +183,9 @@ class _WelcomeBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final isOnline = cp.isOnline ?? false;
     final isToggling = cp.togglingOnline;
-    final company =
-        db?['logistics_company'] as String? ?? 'TaptapGo';
+    // The rider's logistics company; "TaptapGo" when none is on record (same as the Linehaul panel)
+    final named = (db?['logistics_company'] as String?)?.trim() ?? '';
+    final company = named.isNotEmpty ? named : 'TaptapGo';
 
     return Container(
       width: double.infinity,

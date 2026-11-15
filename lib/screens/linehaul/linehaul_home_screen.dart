@@ -147,7 +147,12 @@ class LinehaulHomeScreenState extends State<LinehaulHomeScreen> with WidgetsBind
           // Which panel this is (riders have the Rider Panel)
           const PanelLabel(icon: Icons.local_shipping_rounded, text: 'Linehaul Courier Panel'),
           const SizedBox(height: 2),
-          Text(home['logistics_company'] as String? ?? '',
+          // The courier's logistics company; "TaptapGo" when none is on record (same as the Rider Panel)
+          Text(
+              (home['logistics_company'] as String?)?.trim().isNotEmpty == true
+                  ? (home['logistics_company'] as String).trim()
+                  : 'TaptapGo',
+              key: const Key('linehaulCompany'),
               style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12)),
           const SizedBox(height: kSpace12),
           Container(
