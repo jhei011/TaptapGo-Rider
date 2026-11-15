@@ -1,3 +1,4 @@
+// Same as TaptapShop Flutter (lib/widgets/field_card.dart), so both apps' cards, buttons and empty states match.
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 
@@ -22,7 +23,7 @@ class FieldCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: C.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: C.border),
         boxShadow: const [BoxShadow(color: Color(0x060E2A38), blurRadius: 8, offset: Offset(0, 2))],
@@ -43,9 +44,9 @@ class FieldCard extends StatelessWidget {
               ],
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(title!,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: C.textPrimary)),
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: C.textPrimary)),
                 if (subtitle != null)
-                  Text(subtitle!, style: const TextStyle(fontSize: 11, color: C.textMuted)),
+                  Text(subtitle!, style: TextStyle(fontSize: 11, color: C.textMuted)),
               ]),
             ]),
             const SizedBox(height: 14),
@@ -67,8 +68,8 @@ class InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF1F3F2))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: C.adapt(const Color(0xFFF1F3F2), const Color(0xFF3A3945)))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -78,7 +79,7 @@ class InfoRow extends StatelessWidget {
           Flexible(
             child: Text(value,
                 textAlign: TextAlign.right,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: C.b900)),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: C.adapt(C.b900, C.textPrimary))),
           ),
         ],
       ),

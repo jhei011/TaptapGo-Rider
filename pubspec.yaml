@@ -10,6 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # A clock tests can move forward (the rider's 30-minute idle logout)
+  clock: ^1.1.1
+
   # State management
   provider: ^6.1.2
 
@@ -19,8 +22,7 @@ dependencies:
   # Secure local storage for auth token
   flutter_secure_storage: ^9.0.0
 
-  # Image handling
-  cached_network_image: ^3.3.1
+  # Image handling (cached_network_image removed with the buyer/seller screens that used it)
 
   # Image picker (for valid ID, OR/CR uploads)
   image_picker: ^1.1.2
@@ -56,6 +58,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
   flutter_launcher_icons: ^0.14.3
+  fake_async: ^1.3.3
 
 flutter:
   uses-material-design: true
@@ -65,11 +68,16 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/taptapgo_logo_text.png"
+  # Icon sources live in assets/icon/ (not bundled into the app).
+  # The rider logo centred on white. Its farthest point is 0.43 of the image from the
+  # centre, so circle / rounded-square launchers and iOS rounding never crop it.
+  # app_icon.png = logo on white (older Android, iPhone); app_icon_foreground.png = the
+  # same logo, transparent, over a white adaptive background (Android 8+).
+  image_path: "assets/icon/app_icon.png"
   min_sdk_android: 21
   remove_alpha_ios: true
-  adaptive_icon_background: "#0E2A38"
-  adaptive_icon_foreground: "assets/images/taptapgo_logo_text.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
   android_icon_scale: 1.0
   web:
     generate: false

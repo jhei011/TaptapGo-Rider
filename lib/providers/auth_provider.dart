@@ -8,8 +8,6 @@ import '../models/user.dart';
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
 class AuthProvider extends ChangeNotifier {
-  static const _riderIdleTimeout = Duration(minutes: 30);
-  Timer? _idleTimer;
   StreamSubscription<SessionEnded>? _sessionWatch;
 
   User? _user;
@@ -42,7 +40,11 @@ class AuthProvider extends ChangeNotifier {
   /// Riders and couriers may only work while their logistics company has them approved;
   /// the server refuses the rider endpoints otherwise. Null when [u] may use the app.
   static String? accessProblem(User u) {
-    if (!_isRider(u.role) || u.status == 'approved') return null;
+    // TaptapGo is the rider app; buyer, seller and other accounts use TaptapShop or the website
+    if (!_isRider(u.role)) {
+      return 'TaptapGo is for riders and linehaul couriers. Buyers and sellers, please use the TaptapShop app or website.';
+    }
+    if (u.status == 'approved') return null;
     return switch (u.status) {
       'pending_activation' => 'Your account has not been activated yet. Open the activation link in your email.',
       'pending'            => 'Your rider account is waiting for approval by your logistics company.',
@@ -67,7 +69,6 @@ class AuthProvider extends ChangeNotifier {
       _offline = false;
       await Api.saveUser(d).catchError((_) {});
       _status = AuthStatus.authenticated;
-      resetIdleTimer();
       notifyListeners();
     } on ApiError catch (_) {
       // The server refused the saved login (expired or revoked token, or a deleted account)
@@ -83,7 +84,6 @@ class AuthProvider extends ChangeNotifier {
         _user = u;
         _offline = true;
         _status = AuthStatus.authenticated;
-        resetIdleTimer();
       } else {
         _status = AuthStatus.unauthenticated;
         _error = 'No connection to the server. Check your internet and log in again.';
@@ -123,7 +123,6 @@ class AuthProvider extends ChangeNotifier {
       _user = r.user;
       _offline = false;
       _status = AuthStatus.authenticated;
-      resetIdleTimer();
       _loading = false; notifyListeners();
       return true;
     } on ApiError catch (e) {
@@ -139,37 +138,25 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    _idleTimer?.cancel();
-    _idleTimer = null;
     await AuthService.logout();
     await Api.deleteSavedUser().catchError((_) {});
     _user = null; _offline = false; _status = AuthStatus.unauthenticated; notifyListeners();
   }
 
+  /// The 30-minute idle logout (RiderIdlePolicy), only ever called when the server said the
+  /// rider has no job, offer or trip. The token is ended on the server too.
+  Future<void> endIdleSession() => _endSession(
+      'You were signed out after 30 minutes without activity. Log in again to take jobs.', revoke: true);
+
   void updateUser(User u) { _user = u; notifyListeners(); }
   void clearError()       { _error = null; notifyListeners(); }
 
-  void resetIdleTimer() {
-    final role = _user?.role;
-    if (!_isRider(role)) return;
-    _idleTimer?.cancel();
-    _idleTimer = Timer(_riderIdleTimeout, _idleLogout);
-  }
-
-  Future<void> _idleLogout() async {
-    _idleTimer = null;
-    if (_status != AuthStatus.authenticated) return;
-    if (!_isRider(_user?.role)) return;
-    await _endSession('You were logged out after 30 minutes without activity.', revoke: true);
-  }
 
   /// Signs out without the rider asking: [revoke] also ends the token on the server
   /// (best effort); [forced] tells the app root to leave the current screen.
   Future<void> _endSession(String message, {required bool revoke, bool forced = true}) async {
     if (_ending || (forced && _status != AuthStatus.authenticated)) return;
     _ending = true;
-    _idleTimer?.cancel();
-    _idleTimer = null;
     try {
       if (revoke) {
         await AuthService.logout();
@@ -196,7 +183,6 @@ class AuthProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _idleTimer?.cancel();
     _sessionWatch?.cancel();
     super.dispose();
   }

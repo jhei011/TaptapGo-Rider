@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/google_sign_in_button.dart';
+import '../../widgets/teal_pattern.dart';
 
 const _kRememberMe = 'remember_me';
 const _kSavedEmail = 'saved_email';
@@ -33,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final prefs   = await SharedPreferences.getInstance();
     final remember = prefs.getBool(_kRememberMe) ?? false;
     final email    = prefs.getString(_kSavedEmail) ?? '';
+    if (!mounted) return;
     if (remember && email.isNotEmpty) {
       setState(() {
         _rememberMe = true;
@@ -114,6 +116,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// The account decides the panel: riders (role `courier`) open the Rider panel, linehaul
+  /// couriers (role `linehaul`) the Linehaul Courier panel. Other accounts are refused by
+  /// AuthProvider before getting here (TaptapGo is the rider app).
   void _openHome(bool ok) {
     final auth = context.read<AuthProvider>();
     if (ok && auth.user != null) {
@@ -122,10 +127,6 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, '/courier');
       } else if (role == 'linehaul') {
         Navigator.pushReplacementNamed(context, '/linehaul');
-      } else if (role == 'buyer') {
-        Navigator.pushReplacementNamed(context, '/buyer');
-      } else if (role == 'seller') {
-        Navigator.pushReplacementNamed(context, '/seller');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -141,14 +142,15 @@ class _LoginScreenState extends State<LoginScreen> {
       resizeToAvoidBottomInset: true,
       // Dark teal gradient background matching the reference
       body: Container(
-        decoration: const BoxDecoration(
+        // Faint circles over the teal, as on TaptapShop's login
+        decoration: const TealDecoration(BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Color(0xFF0E2A38), Color(0xFF1B5260), Color(0xFF0E2A38)],
             stops: [0.0, 0.5, 1.0],
           ),
-        ),
+        ), screen: true),
         child: SafeArea(
           child: Column(
             children: [
@@ -164,7 +166,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              _footer(),
             ],
           ),
         ),
@@ -178,9 +179,12 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Row(
           children: [
             Image.asset(
-              'assets/images/taptapgo_logo_text.png',
-              height: 36,
+              'assets/images/taptapgo_app_icon.png',
+              // The app-icon tile, as large as TaptapShop's login logo
+              height: 46,
+              width: 46,
               fit: BoxFit.contain,
+              filterQuality: FilterQuality.medium,
             ),
             const SizedBox(width: 10),
             RichText(
@@ -193,16 +197,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ],
-        ),
-      );
-
-  Widget _footer() => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Text(
-          '© 2026 TaptapGo. All rights reserved.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-              fontSize: 11, color: Colors.white.withAlpha(100)),
         ),
       );
 
@@ -312,7 +306,15 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 14),
 
             // ── Remember me + Forgot password ──────────────────────────────
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            // Wraps "Forgot password?" onto its own line on small screens or large text
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
               GestureDetector(
                 onTap: () =>
                     setState(() => _rememberMe = !_rememberMe),
@@ -347,6 +349,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Color(0xFF1F5F66))),
               ),
             ]),
+            ),
             const SizedBox(height: 22),
 
             // ── LOG IN button ──────────────────────────────────────────────
@@ -368,6 +371,14 @@ class _LoginScreenState extends State<LoginScreen> {
               'emails you an activation link.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
+            ),
+            const SizedBox(height: 18),
+
+            // ── Copyright, at the bottom of the card (TaptapShop) ──────────
+            const Text(
+              '© 2026 TaptapGo. All rights reserved.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 10, color: Color(0xFF9CA3AF)),
             ),
           ]),
         ),
@@ -690,3 +701,4 @@ class _LoginButton extends StatelessWidget {
         ),
       );
 }
+

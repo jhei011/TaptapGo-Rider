@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
+import 'package:taptap_go/core/theme/app_theme.dart';
 import 'package:taptap_go/providers/auth_provider.dart';
 import 'package:taptap_go/screens/linehaul/linehaul_home_screen.dart';
 
@@ -20,6 +21,8 @@ MockClient fakeApi(List<String> calls) => MockClient((request) async {
       calls.add(key);
       final body = switch (key) {
         'GET /linehaul/home' => home,
+        // No active trip, so logging out shows the normal "Log out?" (an active trip gets a warning)
+        'GET /linehaul/trips' => <Object>[],
         'GET /me' => {'id': 9, 'name': 'Ernesto Villareal', 'email': 'ernesto.villareal@example.com', 'role': 'linehaul', 'status': 'approved'},
         'POST /logout' => {'message': 'Logged out successfully'},
         _ => null,
@@ -37,7 +40,7 @@ void main() {
     await http.runWithClient(() async {
       await tester.pumpWidget(ChangeNotifierProvider(
         create: (_) => AuthProvider(),
-        child: MaterialApp(
+        child: MaterialApp(theme: AppTheme.light,
           routes: {'/login': (_) => const Scaffold(body: Text('Login screen'))},
           home: const LinehaulHomeScreen(),
         ),
@@ -55,7 +58,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Log Out'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Log Out'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Log out'));
       await tester.pumpAndSettle();
       expect(calls, contains('POST /logout'));
       expect(find.text('Login screen'), findsOneWidget);
@@ -75,5 +78,25 @@ void main() {
       expect(auth.user!.name, 'Ernesto Villareal');
       expect(calls, ['GET /me']);
     }, () => fakeApi(calls));
+  });
+
+  testWidgets('no logistics company on record: the panel shows TaptapGo, like the Rider Panel', (tester) async {
+    for (final company in [null, '', '  ']) {
+      final noCompany = Map<String, Object?>.from(home)..['logistics_company'] = company;
+      await http.runWithClient(() async {
+        await tester.pumpWidget(ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
+          child: MaterialApp(theme: AppTheme.light, home: LinehaulHomeScreen(key: UniqueKey())),
+        ));
+        await tester.pumpAndSettle();
+        expect(tester.widget<Text>(find.byKey(const Key('linehaulCompany'))).data, 'TaptapGo', reason: '$company');
+      }, () => MockClient((request) async {
+            final key = '${request.method} ${request.url.path.replaceFirst('/api', '')}';
+            final body = key == 'GET /linehaul/home' ? noCompany : key == 'GET /linehaul/trips' ? <Object>[] : null;
+            return body == null
+                ? http.Response(jsonEncode({'message': 'Forbidden'}), 403)
+                : http.Response.bytes(utf8.encode(jsonEncode(body)), 200, headers: {'content-type': 'application/json; charset=utf-8'});
+          }));
+    }
   });
 }

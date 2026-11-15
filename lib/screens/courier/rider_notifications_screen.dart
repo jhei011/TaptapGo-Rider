@@ -7,6 +7,7 @@ import '../../widgets/bh_app_bar.dart';
 import '../../widgets/bh_empty_state.dart';
 import '../../widgets/bh_offline_banner.dart';
 import 'rider_job_widgets.dart' show formatTime;
+import '../../widgets/reveal.dart';
 
 /// What logistics and admin sent this rider (A23): a new job, a cancelled job,
 /// an offer that expired. Tapping a job notification opens that job.
@@ -69,7 +70,7 @@ class _RiderNotificationsScreenState extends State<RiderNotificationsScreen> {
                           return _errorCard(cp.notificationError!);
                         }
                         final item = items[i - (cp.notificationError == null ? 0 : 1)];
-                        return _NotificationTile(notification: item);
+                        return Reveal(index: i, child: _NotificationTile(notification: item));
                       },
                     ),
         ),
@@ -85,7 +86,7 @@ class _RiderNotificationsScreenState extends State<RiderNotificationsScreen> {
           border: Border.all(color: kStatusFailedFg.withValues(alpha: 0.3)),
         ),
         child: Row(children: [
-          const Icon(Icons.error_outline, size: 18, color: kStatusFailedFg),
+          Icon(Icons.error_outline, size: 18, color: kStatusFailedFg),
           const SizedBox(width: kSpace8),
           Expanded(child: Text(message, style: kBodySm.copyWith(color: kStatusFailedFg))),
         ]),
@@ -155,7 +156,7 @@ class _NotificationTile extends StatelessWidget {
                     const Spacer(),
                     Text('Open job',
                         style: kLabelSm.copyWith(color: kBrand700)),
-                    const Icon(Icons.chevron_right, size: 15, color: kBrand700),
+                    Icon(Icons.chevron_right, size: 15, color: kBrand700),
                   ],
                 ]),
               ]),

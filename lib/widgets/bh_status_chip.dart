@@ -22,10 +22,12 @@ class BhStatusChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final (bg, fg, label) = _resolve(status, isDark: isDark);
 
-    final textStyle = size == BhChipSize.small ? kLabelSm : kLabelMd;
-    final padding = size == BhChipSize.small
-        ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
-        : const EdgeInsets.symmetric(horizontal: 10, vertical: 6);
+    // TaptapShop StatusPill: bold 11 px label (10 px small), 6 px dot
+    final small = size == BhChipSize.small;
+    final textStyle = TextStyle(fontSize: small ? 10 : 11, fontWeight: FontWeight.w700, letterSpacing: 0.2, height: 1.2);
+    final padding = small
+        ? const EdgeInsets.symmetric(horizontal: 8, vertical: 3)
+        : const EdgeInsets.symmetric(horizontal: 10, vertical: 4);
 
     return Semantics(
       label: 'Status: $label',
@@ -39,8 +41,8 @@ class BhStatusChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 8,
-              height: 8,
+              width: 6,
+              height: 6,
               decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
             ),
             const SizedBox(width: 5),

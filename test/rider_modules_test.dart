@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taptap_go/core/theme/app_theme.dart';
 import 'package:taptap_go/core/services/location_service.dart';
 import 'package:taptap_go/core/services/pending_delivery_store.dart';
 import 'package:taptap_go/models/rider_job.dart';
@@ -91,7 +92,7 @@ Future<void> pumpApp(WidgetTester tester, FakeApi api, Widget child, {CourierPro
   final provider = cp ?? CourierProvider();
   await tester.pumpWidget(ChangeNotifierProvider.value(
     value: provider,
-    child: MaterialApp(
+    child: MaterialApp(theme: AppTheme.light,
       // The test font draws every glyph as a full square; keep rows within the screen width
       builder: (context, w) => MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(0.8)),
@@ -240,8 +241,50 @@ void main() {
       await tester.enterText(find.byKey(const Key('codField')), '500.00');
       await tester.tap(find.text('Mark as Delivered'));
       await tester.pump();
-      expect(find.text('Take a proof-of-delivery photo.'), findsOneWidget);
+      // In the snackbar and, so it is not missed, in red under the photo button
+      expect(find.text('Take a proof-of-delivery photo.'), findsNWidgets(2));
+      expect(find.byKey(const Key('photoError')), findsOneWidget);
       expect(api.requests.where((r) => r.url.path.endsWith('/deliver')), isEmpty);
+    }, () => api.client);
+  });
+
+  testWidgets('RID-DLV-010: a wrong cash amount or code stays marked in red under the field until it is corrected', (tester) async {
+    final api = FakeApi({'GET /courier/jobs/9': job(id: 9, type: 'delivery', shipment: 'out_for_delivery')});
+    await http.runWithClient(() async {
+      await pumpApp(tester, api, const RiderJobScreen(jobId: 9));
+      await tester.pumpAndSettle();
+
+      // The order total typed instead of the cash to collect (₱500), and a short code
+      await tester.enterText(find.byKey(const Key('otpField')), '123');
+      await tester.enterText(find.byKey(const Key('codField')), '1060');
+      await tester.tap(find.text('Mark as Delivered'));
+      await tester.pump();
+      // Let the snackbar go away: the red messages under the fields must still be there
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pumpAndSettle();
+      const cashMsg = 'Collect exactly ₱500.00 in cash. The amount must match to the centavo.';
+      const codeMsg = 'Enter the 6-digit delivery code from the buyer.';
+      expect(tester.widget<TextField>(find.byKey(const Key('codField'))).decoration!.errorText, cashMsg);
+      expect(tester.widget<TextField>(find.byKey(const Key('otpField'))).decoration!.errorText, codeMsg);
+      expect(find.text(cashMsg), findsOneWidget);
+      expect(find.text(codeMsg), findsOneWidget);
+      expect(api.requests.where((r) => r.url.path.endsWith('/deliver')), isEmpty);
+
+      // The red message stays while the field is still wrong (no redraw mid-typing) …
+      await tester.enterText(find.byKey(const Key('codField')), '50');
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byKey(const Key('codField'))).decoration!.errorText, cashMsg);
+      await tester.enterText(find.byKey(const Key('otpField')), '12345');
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byKey(const Key('otpField'))).decoration!.errorText, codeMsg);
+      // … and goes once it is right; the other field keeps its own message until it is fixed too
+      await tester.enterText(find.byKey(const Key('codField')), '500');
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byKey(const Key('codField'))).decoration!.errorText, isNull);
+      expect(tester.widget<TextField>(find.byKey(const Key('otpField'))).decoration!.errorText, codeMsg);
+      await tester.enterText(find.byKey(const Key('otpField')), '123456');
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byKey(const Key('otpField'))).decoration!.errorText, isNull);
     }, () => api.client);
   });
 
@@ -429,6 +472,28 @@ void main() {
     ..['earned'] = 30
     ..['result'] = 'Picked up';
 
+  testWidgets('a fresh pickup (pay not earned yet) says what is coming, not "You earned ₱0.00"', (tester) async {
+    // As the real server answers right after a pickup: pay 30, earned 0 until the buyer receives it
+    final fresh = job(status: 'done', shipment: 'picked_up')..['result'] = 'Picked up';
+    final api = FakeApi({
+      'GET /courier/jobs': {'active': [job()], 'recent': []},
+      'POST /courier/jobs/7/pickup': {'message': 'Parcel picked up.', 'job': fresh},
+    });
+    await http.runWithClient(() async {
+      late void Function(String) scan;
+      await pumpApp(tester, api, WaybillScannerScreen(
+          confirmPickups: true,
+          cameraBuilder: (context, onCode) {
+            scan = onCode;
+            return const SizedBox.expand();
+          }));
+      scan('TRK-1234567');
+      await tester.pumpAndSettle();
+      expect(find.text('Picked up TRK-1234567. Your ₱30.00 pay counts once the buyer receives the order.'), findsOneWidget);
+      expect(find.textContaining('You earned ₱0.00'), findsNothing);
+    }, () => api.client);
+  });
+
   testWidgets('RID-PICK-002/005: a scanned waybill confirms the pickup; scanning it again shows already picked up', (tester) async {
     final api = FakeApi({
       'GET /courier/jobs': {'active': [job()], 'recent': []},
@@ -613,8 +678,9 @@ void main() {
 
       await tester.tap(find.text('Mark as Returned'));
       await tester.pumpAndSettle();
-      // Only the photo is missing — the code is not asked for
-      expect(find.text('Take a proof-of-delivery photo.'), findsOneWidget);
+      // Only the photo is missing — the code is not asked for (snackbar + red text under the button)
+      expect(find.text('Take a proof-of-delivery photo.'), findsNWidgets(2));
+      expect(find.byKey(const Key('photoError')), findsOneWidget);
     }, () => api.client);
   });
 
@@ -709,6 +775,11 @@ void main() {
       await http.runWithClient(() async {
         await cp.loadDashboard();
         await settle();
+        // Opening the app retries the saved delivery in the background ("Sending…"); wait until
+        // that attempt has failed (no internet) instead of a fixed 20 ms, which a busy machine misses.
+        for (var i = 0; i < 200 && cp.syncing; i++) {
+          await settle();
+        }
       }, () => api.client);
     });
     addTearDown(() => dir.deleteSync(recursive: true));

@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taptap_go/core/theme/app_theme.dart';
 import 'package:taptap_go/core/constants/app_constants.dart';
 import 'package:taptap_go/providers/auth_provider.dart';
 import 'package:taptap_go/screens/auth/login_screen.dart';
@@ -71,7 +72,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(ChangeNotifierProvider(
       create: (_) => AuthProvider(),
-      child: MaterialApp(
+      child: MaterialApp(theme: AppTheme.light,
         // The test font draws every glyph as a full square; scale as the other tests do
         builder: (context, w) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(0.8)),
@@ -89,7 +90,7 @@ void main() {
   });
 
   testWidgets('the Google button disables itself and shows progress while signing in', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: GoogleSignInButton(onPressed: null, loading: true))));
+    await tester.pumpWidget(MaterialApp(theme: AppTheme.light, home: const Scaffold(body: GoogleSignInButton(onPressed: null, loading: true))));
     expect(tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed, isNull);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_tokens.dart';
 
-/// Full-width primary action button.
+/// Full-width primary action button, styled like TaptapShop's GradButton (navy-to-teal
+/// gradient, 10 px corners, bold 14 px label).
 ///
 /// [gradient] (default true) uses the TaptapShop C.primaryGrad (#0E2A38→#4A949C).
 /// Set [gradient] = false for a flat teal button (e.g. inside cards).
@@ -29,7 +30,7 @@ class BhPrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // Destructive always uses flat red; gradient only applies to primary action
     final useGradient = gradient && !destructive;
-    final flatColor = destructive ? kActionDestructive : kBrand700;
+    final flatColor = destructive ? kActionDestructive : kBrand700Fill;
 
     return Semantics(
       label: label,
@@ -48,10 +49,10 @@ class BhPrimaryButton extends StatelessWidget {
                   disabledForegroundColor: Colors.white70,
                   minimumSize: const Size(double.infinity, 48),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(kRadiusLg),
+                    borderRadius: BorderRadius.circular(kRadiusButton),
                   ),
                   elevation: 0,
-                  textStyle: kLabelLg,
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                 ),
                 child: loading ? _loadingChild() : _labelChild(),
               ),
@@ -67,16 +68,7 @@ class BhPrimaryButton extends StatelessWidget {
             ? const LinearGradient(
                 colors: [Color(0xFF9CA3AF), Color(0xFF6B7280)])
             : C.primaryGrad,
-        borderRadius: BorderRadius.circular(kRadiusLg),
-        boxShadow: disabled
-            ? null
-            : const [
-                BoxShadow(
-                  color: Color(0x300E2A38),
-                  blurRadius: 14,
-                  offset: Offset(0, 6),
-                ),
-              ],
+        borderRadius: BorderRadius.circular(kRadiusButton),
       ),
       child: ElevatedButton(
         onPressed: loading ? null : onPressed,
@@ -86,11 +78,11 @@ class BhPrimaryButton extends StatelessWidget {
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(kRadiusLg),
+            borderRadius: BorderRadius.circular(kRadiusButton),
           ),
           elevation: 0,
           padding: EdgeInsets.zero,
-          textStyle: kLabelLg,
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
         ),
         child: loading ? _loadingChild() : _labelChild(),
       ),

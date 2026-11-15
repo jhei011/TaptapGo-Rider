@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taptap_go/core/theme/app_theme.dart';
 import 'package:taptap_go/providers/auth_provider.dart';
 import 'package:taptap_go/screens/auth/login_screen.dart';
 
@@ -13,7 +14,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider(
         create: (_) => AuthProvider(),
-        child: MaterialApp(
+        child: MaterialApp(theme: AppTheme.light,
           // The test font draws every glyph as a full square, which makes the
           // "Remember me / Forgot password?" row a few pixels too wide for the card.
           builder: (context, child) => MediaQuery(

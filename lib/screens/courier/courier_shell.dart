@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/courier_provider.dart';
+import '../../widgets/tap.dart';
 import 'courier_dashboard_screen.dart';
 import 'courier_orders_screen.dart';
 import 'courier_earnings_screen.dart';
@@ -62,7 +63,8 @@ class _CourierShellState extends State<CourierShell> {
     final isOnline = cp.isOnline ?? false;
 
     return Scaffold(
-      body: IndexedStack(index: _idx, children: _screens),
+      // Every tab stays alive; switching fades the new one in (TaptapShop)
+      body: _FadeTabs(index: _idx, children: _screens),
       bottomNavigationBar: _BhBottomBar(
         selectedIndex: _idx,
         onTap: _onTabTap,
@@ -72,7 +74,43 @@ class _CourierShellState extends State<CourierShell> {
   }
 }
 
-// ── Custom bottom bar ─────────────────────────────────────────────────────────
+/// Like an IndexedStack (each tab keeps its state), but the newly picked tab fades in with a
+/// slight upward glide instead of appearing at once — TaptapShop's _FadeTabs.
+class _FadeTabs extends StatefulWidget {
+  final int index;
+  final List<Widget> children;
+  const _FadeTabs({required this.index, required this.children});
+  @override
+  State<_FadeTabs> createState() => _FadeTabsState();
+}
+
+class _FadeTabsState extends State<_FadeTabs> with SingleTickerProviderStateMixin {
+  late final _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 240), value: 1);
+  late final _curve = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
+
+  @override
+  void didUpdateWidget(_FadeTabs old) {
+    super.didUpdateWidget(old);
+    if (old.index != widget.index) _ctrl.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+        opacity: _curve,
+        child: SlideTransition(
+          position: Tween(begin: const Offset(0, 0.015), end: Offset.zero).animate(_curve),
+          child: IndexedStack(index: widget.index, children: widget.children),
+        ),
+      );
+}
+
+// ── Bottom bar (TaptapShop's _BottomNav, with the rider's Scan button in the middle) ──
 
 class _BhBottomBar extends StatelessWidget {
   final int selectedIndex;
@@ -85,186 +123,152 @@ class _BhBottomBar extends StatelessWidget {
     required this.isOnline,
   });
 
-  // Maps visual slot index → tab index in IndexedStack.
-  // Slots: 0=Home, 1=Parcels, 2=Scan(center/no tab), 3=Earnings, 4=Profile
-  static const _slotToTab = <int>[0, 1, -1, 2, 3];
-
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? kDarkSurfaceBase : kSurfaceBase;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final barHeight = 64.0 + bottomPadding;
-
+    // Rounded top corners with a soft shadow, so the bar floats over the page
     return Container(
-      height: barHeight,
       decoration: BoxDecoration(
-        color: bgColor,
-        border: const Border(top: BorderSide(color: kBorderSubtle, width: 1)),
+        color: kSurfaceBase,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(kRadiusNavBar)),
+        border: Border.all(color: AppPalette.dark ? kBorderDefault : const Color(0x14000000), width: 0.8),
+        boxShadow: const [BoxShadow(color: Color(0x1A000000), blurRadius: 16, offset: Offset(0, -4))],
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Tab row (5 slots)
-          Positioned.fill(
-            child: Row(
-              children: List.generate(5, (slot) {
-                if (slot == 2) {
-                  // Scan slot — spacer so scan FAB occupies its space
-                  return const Expanded(child: SizedBox.shrink());
-                }
-                final tabIdx = _slotToTab[slot];
-                final isSelected = tabIdx == selectedIndex;
-                return Expanded(
-                  child: _TabSlot(
-                    slot: slot,
-                    tabIdx: tabIdx,
-                    isSelected: isSelected,
-                    isOnline: isOnline,
-                    onTap: () => onTap(tabIdx),
-                  ),
-                );
-              }),
-            ),
-          ),
-
-          // Scan FAB — centered, lifted above bar top
-          Positioned(
-            top: -10,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Semantics(
-                label: 'Scan parcel',
-                button: true,
-                child: GestureDetector(
-                  onTap: () => Navigator.pushNamed(
-                      context, '/courier/scan'),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0E2A38), Color(0xFF4A949C)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0E2A38).withValues(alpha: 0.40),
-                              blurRadius: 14,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.qr_code_scanner,
-                            color: Colors.white, size: 24),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'Scan',
-                        style: kLabelSm.copyWith(color: kTextMuted),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Individual tab slot (non-scan) ────────────────────────────────────────────
-
-class _TabSlot extends StatelessWidget {
-  final int slot;
-  final int tabIdx;
-  final bool isSelected;
-  final bool isOnline;
-  final VoidCallback onTap;
-
-  const _TabSlot({
-    required this.slot,
-    required this.tabIdx,
-    required this.isSelected,
-    required this.isOnline,
-    required this.onTap,
-  });
-
-  static const _icons = <int, (IconData, IconData, String)>{
-    0: (Icons.dashboard_outlined, Icons.dashboard, 'Home'),
-    1: (Icons.inventory_2_outlined, Icons.inventory_2, 'Parcels'),
-    3: (Icons.account_balance_wallet_outlined,
-        Icons.account_balance_wallet, 'Earnings'),
-    4: (Icons.person_outline, Icons.person, 'Profile'),
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final (outlinedIcon, filledIcon, label) = _icons[slot]!;
-    final icon = isSelected ? filledIcon : outlinedIcon;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 48),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            // Top indicator line
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 2,
-              width: isSelected ? 24.0 : 0.0,
-              decoration: BoxDecoration(
-                color: kBrand600,
-                borderRadius: BorderRadius.circular(kRadiusFull),
-              ),
-            ),
-            const SizedBox(height: 10),
-            // Icon with optional online badge
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isSelected ? kBrand600 : kTextMuted,
-                ),
-                // Online badge for Home slot
-                if (isOnline && slot == 0)
-                  Positioned(
-                    top: 0,
-                    right: -1,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF4CAF50),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            // Label — only show when selected
-            if (isSelected)
-              Text(
-                label,
-                style: kLabelSm.copyWith(color: kBrand600),
-              ),
-          ],
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 60,
+          child: Row(children: [
+            _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home',
+                index: 0, current: selectedIndex, onTap: onTap, showOnlineDot: isOnline),
+            _NavItem(icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2, label: 'Parcels',
+                index: 1, current: selectedIndex, onTap: onTap),
+            const _ScanButton(),
+            _NavItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet,
+                label: 'Earnings', index: 2, current: selectedIndex, onTap: onTap),
+            _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profile',
+                index: 3, current: selectedIndex, onTap: onTap),
+          ]),
         ),
       ),
     );
   }
 }
+
+/// The rider's waybill scanner, raised in the middle of the bar.
+class _ScanButton extends StatelessWidget {
+  const _ScanButton();
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: Semantics(
+          label: 'Scan parcel',
+          button: true,
+          child: Tap(
+            onTap: () => Navigator.pushNamed(context, '/courier/scan'),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: kPrimaryGradient,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: kBrand900.withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 3)),
+                  ],
+                ),
+                child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 22),
+              ),
+              const SizedBox(height: 2),
+              _label('Scan', active: false),
+            ]),
+          ),
+        ),
+      );
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final int index;
+  final int current;
+  final ValueChanged<int> onTap;
+  final bool showOnlineDot;
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.index,
+    required this.current,
+    required this.onTap,
+    this.showOnlineDot = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = index == current;
+    final color = isActive ? _activeColor : kTextSecondary;
+    return Expanded(
+      child: Semantics(
+        selected: isActive,
+        button: true,
+        label: label,
+        excludeSemantics: true,
+        child: Tap(
+          onTap: () => onTap(index),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            // A soft pill grows behind the active tab's icon
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              width: isActive ? 56 : 32,
+              height: 30,
+              decoration: BoxDecoration(
+                color: isActive ? _activeColor.withValues(alpha: AppPalette.dark ? 0.18 : 0.12) : Colors.transparent,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              alignment: Alignment.center,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 150),
+                // Green dot on Home while the rider is Online
+                child: Badge(
+                  key: ValueKey(isActive),
+                  isLabelVisible: showOnlineDot,
+                  smallSize: 8,
+                  backgroundColor: const Color(0xFF4CAF50),
+                  child: AnimatedScale(
+                    scale: isActive ? 1.0 : 0.92,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(isActive ? activeIcon : icon, size: 23, color: color),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 3),
+            _label(label, active: isActive),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+Color get _activeColor => AppPalette.dark ? kTealOnDark : kBrand700;
+
+/// One line always: shrinks on narrow phones or with large text (TaptapShop).
+Widget _label(String text, {required bool active}) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          text,
+          maxLines: 1,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+            color: active ? _activeColor : kTextSecondary,
+          ),
+        ),
+      ),
+    );

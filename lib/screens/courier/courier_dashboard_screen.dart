@@ -10,6 +10,9 @@ import '../../widgets/bh_stat_tile.dart';
 import '../../widgets/bh_offline_banner.dart';
 import '../../widgets/bh_empty_state.dart';
 import 'rider_job_widgets.dart';
+import '../../widgets/teal_pattern.dart';
+import '../../widgets/panel_label.dart';
+import '../../widgets/reveal.dart';
 
 class CourierDashboardScreen extends StatefulWidget {
   const CourierDashboardScreen({super.key});
@@ -38,13 +41,9 @@ class _CourierDashState extends State<CourierDashboardScreen> {
       appBar: BhAppBar(
         title: BhAppBar.kWordmark,
         showBack: false,
+        // Pull down on the page to refresh
         actions: [
           _NotificationBell(cp: cp),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-            onPressed: cp.loadDashboard,
-          ),
         ],
       ),
       body: BhOfflineBanner(
@@ -63,7 +62,7 @@ class _CourierDashState extends State<CourierDashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // ── Welcome + Online/Offline banner ──────────────────
-                      _WelcomeBanner(user: user, cp: cp, db: db),
+                      Reveal(child: _WelcomeBanner(user: user, cp: cp, db: db)),
                       const SizedBox(height: kSpace14),
 
                       // ── Messages such as "account suspended" ─────────────
@@ -89,11 +88,11 @@ class _CourierDashState extends State<CourierDashboardScreen> {
                       ],
 
                       // ── Stats row ─────────────────────────────────────────
-                      _StatsRow(db: db),
+                      Reveal(index: 1, child: _StatsRow(db: db)),
                       const SizedBox(height: kSpace14),
 
                       // ── Earnings summary ─────────────────────────────────
-                      if (db != null) _EarningsCard(db: db),
+                      if (db != null) Reveal(index: 2, child: _EarningsCard(db: db)),
                       if (db != null) const SizedBox(height: kSpace14),
 
                       // ── Job offers (60 seconds each) ─────────────────────
@@ -107,12 +106,16 @@ class _CourierDashState extends State<CourierDashboardScreen> {
                       ],
 
                       // ── Active jobs ──────────────────────────────────────
-                      Text('Active Jobs',
-                          style: kHeadingSm.copyWith(color: kTextPrimary)),
+                      Reveal(
+                        index: 3,
+                        child: Text('Active Jobs',
+                            style: kHeadingSm.copyWith(color: kTextPrimary)),
+                      ),
                       const SizedBox(height: kSpace10),
 
                       if (cp.activeJobs.isNotEmpty)
-                        ...cp.activeJobs.map((j) => RiderJobCard(job: j))
+                        for (final (i, j) in cp.activeJobs.indexed)
+                          Reveal(key: ValueKey('job-${j.id}'), index: 4 + i, child: RiderJobCard(job: j))
                       else
                         BhEmptyState(
                           icon: Icons.inbox_outlined,
@@ -180,13 +183,14 @@ class _WelcomeBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final isOnline = cp.isOnline ?? false;
     final isToggling = cp.togglingOnline;
-    final company =
-        db?['logistics_company'] as String? ?? 'TaptapGo';
+    // The rider's logistics company; "TaptapGo" when none is on record (same as the Linehaul panel)
+    final named = (db?['logistics_company'] as String?)?.trim() ?? '';
+    final company = named.isNotEmpty ? named : 'TaptapGo';
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(kSpace20),
-      decoration: BoxDecoration(
+      decoration: TealDecoration(BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF0E2A38), Color(0xFF1F4F5C), Color(0xFF4A949C)],
           stops: [0.0, 0.55, 1.0],
@@ -198,7 +202,7 @@ class _WelcomeBanner extends StatelessWidget {
           BoxShadow(
               color: Color(0x300E2A38), blurRadius: 18, offset: Offset(0, 6))
         ],
-      ),
+      )),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -221,35 +225,9 @@ class _WelcomeBanner extends StatelessWidget {
                             fontSize: 20,
                             fontWeight: FontWeight.w800)),
                     const SizedBox(height: 4),
-                    // TaptapGo wordmark — same style as login screen
-                    RichText(
-                      text: const TextSpan(children: [
-                        TextSpan(
-                          text: 'Taptap',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'Go',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            fontStyle: FontStyle.italic,
-                            color: Color(0xFF8FE0D2),
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' · ',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white54,
-                          ),
-                        ),
-                      ]),
-                    ),
+                    // Which panel this is (the Linehaul Courier panel has its own)
+                    const PanelLabel(icon: Icons.two_wheeler_rounded, text: 'Rider Panel'),
+                    const SizedBox(height: 2),
                     Text(company,
                         style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.65),
@@ -302,37 +280,24 @@ class _WelcomeBanner extends StatelessWidget {
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
                   else
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: isOnline
-                            ? const Color(0xFF69F0AE)
-                            : Colors.white.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                        boxShadow: isOnline
-                            ? [
-                                BoxShadow(
-                                    color: const Color(0xFF69F0AE)
-                                        .withValues(alpha: 0.6),
-                                    blurRadius: 6)
-                              ]
-                            : null,
-                      ),
-                    ),
+                    _LiveDot(online: isOnline),
                   const SizedBox(width: kSpace8),
-                  Text(
-                    isToggling
-                        ? 'Updating...'
-                        : isOnline
-                            ? 'Online — Ready to Deliver'
-                            : 'Offline — Go Online to Accept Parcels',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600),
+                  // Takes the room left beside the switch and wraps with large text / display
+                  // size instead of overflowing past it
+                  Expanded(
+                    child: Text(
+                      isToggling
+                          ? 'Updating...'
+                          : isOnline
+                              ? 'Online — Ready to Deliver'
+                              : 'Offline — Go Online to Accept Parcels',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
+                    ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: kSpace8),
                   _OnlineSwitch(isOnline: isOnline),
                 ],
               ),
@@ -399,7 +364,9 @@ class _StatsRow extends StatelessWidget {
     final activeCount = db?['active_jobs'] ?? 0;
     final todayCount = db?['today_delivered'] ?? 0;
 
-    return Row(children: [
+    // All three tiles take the tallest one's height, even when a label wraps on a small phone
+    return IntrinsicHeight(
+      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Expanded(
         child: BhStatTile(
           value: '$totalDelivered',
@@ -426,7 +393,8 @@ class _StatsRow extends StatelessWidget {
           iconColor: const Color(0xFFF0A500),
         ),
       ),
-    ]);
+    ]),
+    );
   }
 }
 
@@ -453,7 +421,7 @@ class _EarningsCard extends StatelessWidget {
               color: kBrand50,
               borderRadius: BorderRadius.circular(kRadiusMd),
             ),
-            child: const Icon(Icons.account_balance_wallet_outlined,
+            child: Icon(Icons.account_balance_wallet_outlined,
                 size: 22, color: kBrand700),
           ),
           const SizedBox(width: kSpace14),
@@ -516,7 +484,7 @@ class LocationBanner extends StatelessWidget {
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Icon(Icons.location_off_outlined, color: kStatusFailedFg, size: 18),
+            Icon(Icons.location_off_outlined, color: kStatusFailedFg, size: 18),
             const SizedBox(width: kSpace8),
             Expanded(
               child: Text(
@@ -549,15 +517,15 @@ class _PendingDeliveriesBanner extends StatelessWidget {
     final count = cp.pendingDeliveries.length;
     return Container(
       padding: const EdgeInsets.all(kSpace12),
-      decoration: BoxDecoration(color: const Color(0xFFFEF9C3), borderRadius: BorderRadius.circular(kRadiusMd)),
+      decoration: BoxDecoration(color: kStatusPendingBg, borderRadius: BorderRadius.circular(kRadiusMd)),
       child: Row(children: [
-        const Icon(Icons.cloud_off_outlined, size: 18, color: Color(0xFF854D0E)),
+        Icon(Icons.cloud_off_outlined, size: 18, color: kStatusPendingFg),
         const SizedBox(width: kSpace8),
         Expanded(
           child: Text(
             '$count ${count == 1 ? 'delivery is' : 'deliveries are'} saved on this phone and not sent yet: '
             '${cp.pendingDeliveries.map((p) => p.trackingNumber).join(', ')}.',
-            style: kBodySm.copyWith(color: const Color(0xFF854D0E)),
+            style: kBodySm.copyWith(color: kStatusPendingFg),
           ),
         ),
         TextButton(
@@ -583,14 +551,91 @@ class _ErrorBanner extends StatelessWidget {
           border: Border.all(color: kStatusFailedFg.withValues(alpha: 0.3)),
         ),
         child: Row(children: [
-          const Icon(Icons.error_outline, color: kStatusFailedFg, size: 18),
+          Icon(Icons.error_outline, color: kStatusFailedFg, size: 18),
           const SizedBox(width: kSpace8),
           Expanded(child: Text(message, style: kBodySm.copyWith(color: kStatusFailedFg))),
           IconButton(
-            icon: const Icon(Icons.close, size: 16, color: kStatusFailedFg),
+            icon: Icon(Icons.close, size: 16, color: kStatusFailedFg),
             tooltip: 'Dismiss',
             onPressed: onClose,
           ),
         ]),
+      );
+}
+
+/// The Online/Offline dot. Going Online sends out a few soft pulses, then it glows steadily.
+class _LiveDot extends StatefulWidget {
+  final bool online;
+  const _LiveDot({required this.online});
+
+  @override
+  State<_LiveDot> createState() => _LiveDotState();
+}
+
+class _LiveDotState extends State<_LiveDot> with SingleTickerProviderStateMixin {
+  static const _green = Color(0xFF69F0AE);
+  late final AnimationController _pulse =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1100));
+
+  bool _firstDependencies = true;
+
+  // Not in initState: _start reads MediaQuery, which may only be read once the widget is
+  // in the tree. Opening the dashboard while already Online crashed the screen.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_firstDependencies) {
+      _firstDependencies = false;
+      if (widget.online) _start();
+    }
+  }
+
+  @override
+  void didUpdateWidget(_LiveDot old) {
+    super.didUpdateWidget(old);
+    if (widget.online && !old.online) _start();
+    if (!widget.online) _pulse.value = 0;
+  }
+
+  void _start() {
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return;
+    // A few pulses only, so the screen settles
+    _pulse.repeat(count: 3).whenComplete(() { if (mounted) _pulse.value = 0; });
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 10,
+        height: 10,
+        child: AnimatedBuilder(
+          animation: _pulse,
+          builder: (context, _) => Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [
+            if (widget.online && _pulse.value > 0)
+              Container(
+                width: 10 + 16 * _pulse.value,
+                height: 10 + 16 * _pulse.value,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _green.withValues(alpha: 0.45 * (1 - _pulse.value)),
+                ),
+              ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: widget.online ? _green : Colors.white.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+                boxShadow: widget.online ? [BoxShadow(color: _green.withValues(alpha: 0.6), blurRadius: 6)] : null,
+              ),
+            ),
+          ]),
+        ),
       );
 }

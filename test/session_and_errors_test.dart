@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taptap_go/core/theme/app_theme.dart';
 import 'package:taptap_go/core/services/api.dart';
 import 'package:taptap_go/main.dart' show ForcedLogoutWatcher;
 import 'package:taptap_go/models/rider_job.dart';
@@ -195,7 +196,9 @@ void main() {
       expect(AuthProvider.accessProblem(u('linehaul', 'approved')), isNull);
       expect(AuthProvider.accessProblem(u('courier', 'suspended')), contains('suspended'));
       expect(AuthProvider.accessProblem(u('courier', 'pending_activation')), contains('activated'));
-      expect(AuthProvider.accessProblem(u('buyer', 'unverified')), isNull); // not a rider account
+      // TaptapGo is the rider app now: buyer and seller accounts are refused (they use TaptapShop)
+      expect(AuthProvider.accessProblem(u('buyer', 'approved')), contains('TaptapGo is for riders'));
+      expect(AuthProvider.accessProblem(u('seller', 'approved')), contains('TaptapGo is for riders'));
     });
 
     test('opening the app with no connection keeps the rider signed in with the last confirmed user', () async {
@@ -244,7 +247,7 @@ void main() {
           ],
           child: ForcedLogoutWatcher(
             navigatorKey: nav,
-            child: MaterialApp(
+            child: MaterialApp(theme: AppTheme.light,
               navigatorKey: nav,
               home: const Text('courier home'),
               routes: {'/login': (_) => const Text('login screen')},
@@ -287,7 +290,7 @@ void main() {
         final cp = CourierProvider();
         await tester.pumpWidget(ChangeNotifierProvider.value(
           value: cp,
-          child: MaterialApp(
+          child: MaterialApp(theme: AppTheme.light,
             home: Builder(builder: (ctx) => Scaffold(body: Center(child: TextButton(
               onPressed: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => const RiderJobScreen(jobId: 7))),
               child: const Text('open job'),
@@ -333,7 +336,7 @@ void main() {
         addTearDown(tester.view.reset);
         await tester.pumpWidget(ChangeNotifierProvider(
           create: (_) => CourierProvider(),
-          child: const MaterialApp(home: RiderJobScreen(jobId: 7)),
+          child: MaterialApp(theme: AppTheme.light, home: const RiderJobScreen(jobId: 7)),
         ));
         await tester.pumpAndSettle();
 
