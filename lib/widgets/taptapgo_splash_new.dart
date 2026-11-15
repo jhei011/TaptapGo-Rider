@@ -93,8 +93,9 @@ class _TapTapGoSplashScreenState extends State<TapTapGoSplashScreen>
     final media = MediaQuery.of(context);
     final w = media.size.width;
     final h = media.size.height;
-    final scooterW = (w * 0.82).clamp(200.0, 360.0);
-    final scooterH = scooterW * 571 / 800;
+    // The rider logo (transparent, square image) rides in on the road
+    final scooterW = (w * 0.72).clamp(200.0, 320.0);
+    final scooterH = scooterW;
     final roadTop = h * 0.65;
     final center = Offset(w / 2, h * 0.5);
 
@@ -230,7 +231,7 @@ class _TapTapGoSplashScreenState extends State<TapTapGoSplashScreen>
                   );
                 },
                 child: Image.asset(
-                  'assets/images/taptapgo_scooter.png',
+                  'assets/images/taptapgo_rider_logo.png',
                   fit: BoxFit.contain,
                   filterQuality: FilterQuality.high,
                 ),

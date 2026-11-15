@@ -67,13 +67,15 @@ flutter_launcher_icons:
   android: true
   ios: true
   # Icon sources live in assets/icon/ (not bundled into the app).
-  # One square icon everywhere: the scooter at 80% with its teal background continued
-  # around it, so circle / rounded-square launchers and iOS rounding never crop it.
+  # The rider logo centred on white. Its farthest point is 0.43 of the image from the
+  # centre, so circle / rounded-square launchers and iOS rounding never crop it.
+  # app_icon.png = logo on white (older Android, iPhone); app_icon_foreground.png = the
+  # same logo, transparent, over a white adaptive background (Android 8+).
   image_path: "assets/icon/app_icon.png"
   min_sdk_android: 21
   remove_alpha_ios: true
-  adaptive_icon_background: "#1CC9B4"
-  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
   android_icon_scale: 1.0
   web:
     generate: false
