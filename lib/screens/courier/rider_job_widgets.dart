@@ -91,7 +91,7 @@ class RiderJobCard extends StatelessWidget {
                   job.isReturn
                       ? 'Return'
                       : job.isCod
-                          ? 'COD ${peso(job.codAmount)}'
+                          ? 'COD ${peso(job.cashAmount)}'
                           : 'Paid',
                   style: kLabelMd.copyWith(color: kBrand700)),
             ]),
@@ -177,7 +177,13 @@ class _JobOfferCardState extends State<JobOfferCard> {
         _line(Icons.storefront_outlined, 'Pickup', '${job.pickup.name} · ${job.pickup.area}'),
         _line(Icons.home_outlined, 'Drop-off', job.dropoff.area),
         _line(Icons.payments_outlined, 'COD',
-            job.isReturn ? 'None (return)' : job.isCod ? peso(job.codAmount) : 'None (prepaid)'),
+            job.isReturn
+                ? 'None (return)'
+                : job.isCod
+                    ? job.paidWithWallet
+                        ? '${peso(job.codAmount)} (${peso(job.walletPaid)} paid via TapTapPay)'
+                        : peso(job.codAmount)
+                    : job.isTapTapPay ? 'None (paid with TapTapPay)' : 'None (prepaid)'),
         _line(Icons.account_balance_wallet_outlined, 'Pay',
             job.isReturn ? 'No pay for a return trip' : '${peso(job.pay)} ${job.isPickup ? 'pickup' : 'delivery'}'),
         const SizedBox(height: kSpace12),

@@ -13,7 +13,14 @@ class RiderJob {
   final double earned;
   final String? result;
   final String paymentMethod;
+  /// Cash still to collect at the door (0 once collected, or when prepaid).
   final double codAmount;
+  /// What the buyer pays in all, and the part already paid with TapTapPay.
+  /// Null from a server without TapTapPay.
+  final double? orderTotal;
+  final double walletPaid;
+  /// The cash part of a COD order, kept after delivery (codAmount is then 0).
+  final double? codTotal;
   final JobStop pickup;
   final JobStop dropoff;
   final List<JobItem> items;
@@ -31,6 +38,7 @@ class RiderJob {
     required this.trackingNumber, required this.orderId, required this.parcels,
     required this.pay, required this.earned, this.result,
     required this.paymentMethod, required this.codAmount,
+    this.orderTotal, this.walletPaid = 0, this.codTotal,
     required this.pickup, required this.dropoff, this.items = const [],
     this.failedReason, this.times = const {}, this.podPhotoUrl,
     this.direction = 'forward', this.returnNumber,
@@ -48,6 +56,22 @@ class RiderJob {
 
   /// COD is only collected on a forward delivery.
   bool get collectsCod => isCod && !isReturn;
+
+  bool get isTapTapPay => paymentMethod == 'taptappay';
+
+  /// Part (COD split) or all (TapTapPay) of the order was paid in the buyer's app.
+  bool get paidWithWallet => walletPaid > 0;
+
+  /// The cash amount to show: what is left to collect on an open job, and what was
+  /// collected on a finished one (instead of "COD ₱0.00").
+  double get cashAmount => isActive ? codAmount : (codTotal ?? codAmount);
+
+  /// Short payment text for cards: "COD ₱860.00", "Paid (TapTapPay)".
+  String get paymentLabel => isCod
+      ? 'COD'
+      : isTapTapPay
+          ? 'Paid (TapTapPay)'
+          : 'Paid (${paymentMethod.toUpperCase()})';
 
   bool get canConfirmPickup => isPickup && isActive && shipmentStatus == 'awaiting_pickup';
   bool get canStartDelivery => isDelivery && isActive && shipmentStatus == 'at_hub';
@@ -75,6 +99,9 @@ class RiderJob {
         result: j['result'],
         paymentMethod: j['payment_method'] ?? '',
         codAmount: (j['cod_amount'] as num?)?.toDouble() ?? 0,
+        orderTotal: (j['order_total'] as num?)?.toDouble(),
+        walletPaid: (j['wallet_paid'] as num?)?.toDouble() ?? 0,
+        codTotal: (j['cod_total'] as num?)?.toDouble(),
         pickup: JobStop.fromJson((j['pickup'] as Map?)?.cast<String, dynamic>() ?? const {}),
         dropoff: JobStop.fromJson((j['dropoff'] as Map?)?.cast<String, dynamic>() ?? const {}),
         items: (j['items'] as List? ?? [])

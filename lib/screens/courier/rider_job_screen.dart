@@ -469,7 +469,14 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
           if (job.returnNumber != null) _row('Return no.', job.returnNumber!),
           _row('Your pay', job.status == 'assigned' ? 'No pay for a return trip' : peso(job.earned)),
         ] else ...[
-          _row('Payment', job.isCod ? 'COD ${peso(job.codAmount)}' : '${peso(0)} COD · Paid (${job.paymentMethod.toUpperCase()})'),
+          if (job.paidWithWallet) ...[
+            // Part or all was paid in the buyer's app: collect only the cash part
+            if (job.orderTotal != null) _row('Order total', peso(job.orderTotal!)),
+            _row('Paid via TapTapPay', peso(job.walletPaid)),
+            _row(job.isActive ? 'Cash to collect' : 'Cash collected',
+                job.isCod ? peso(job.cashAmount) : '${peso(0)} · nothing to collect'),
+          ] else
+            _row('Payment', job.isCod ? 'COD ${peso(job.cashAmount)}' : '${peso(0)} COD · ${job.paymentLabel}'),
           // Pay is earned once the order reaches the buyer (RiderJobService::earned), so a
           // finished pickup shows what is coming instead of ₱0.00
           _row('Your pay', job.status == 'assigned'
