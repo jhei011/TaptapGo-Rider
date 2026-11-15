@@ -38,6 +38,12 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
   final _cod = TextEditingController();
   File? _photo;
 
+  // Why Mark as Delivered was refused, shown in red under the field until the rider fixes it
+  // (a snackbar alone disappears after a few seconds and is easy to miss with cash in hand).
+  String? _photoError;
+  String? _otpError;
+  String? _codError;
+
   late final CourierProvider _cp;
   bool _hadPending = false;
 
@@ -607,16 +613,26 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
           if (_cp.pendingFor(job.id) case final saved?) _pendingBanner(saved),
           Text('Proof of delivery', style: kHeadingSm.copyWith(color: kTextPrimary)),
           const SizedBox(height: kSpace10),
-          if (_photo != null)
+          if (_photo != null) ...[
             ClipRRect(
+              key: const Key('podPreview'),
               borderRadius: BorderRadius.circular(kRadiusMd),
               child: Image.file(_photo!, height: 160, fit: BoxFit.cover),
             ),
+            // Room between the photo and the Retake button, so the photo does not sit on it
+            const SizedBox(height: kSpace12),
+          ],
           OutlinedButton.icon(
             icon: const Icon(Icons.photo_camera_outlined, size: 18),
             label: Text(_photo == null ? 'Take photo' : 'Retake photo'),
             onPressed: _busy ? null : _takePhoto,
           ),
+          if (_photoError != null && _photo == null)
+            Padding(
+              padding: const EdgeInsets.only(top: kSpace6),
+              child: Text(_photoError!,
+                  key: const Key('photoError'), style: kBodySm.copyWith(color: kActionDestructive)),
+            ),
           const SizedBox(height: kSpace10),
           if (job.isReturn)
             Text(
@@ -632,8 +648,17 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
               maxLength: 6,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               autofillHints: const [AutofillHints.oneTimeCode],
-              decoration: const InputDecoration(
-                  labelText: 'Delivery code from the buyer', counterText: '', border: OutlineInputBorder()),
+              // The red message goes once the code is complete, not on the first key: redrawing the
+              // field while the rider is still typing can drop the next digits (seen on a phone)
+              onChanged: (v) {
+                if (_otpError != null && v.length == 6) setState(() => _otpError = null);
+              },
+              decoration: InputDecoration(
+                  labelText: 'Delivery code from the buyer',
+                  counterText: '',
+                  errorText: _otpError,
+                  errorMaxLines: 3,
+                  border: const OutlineInputBorder()),
             ),
             if (job.collectsCod) ...[
               const SizedBox(height: kSpace10),
@@ -642,7 +667,15 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
                 controller: _cod,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+                // Red until the amount is exactly right (same reason as the code field above)
+                onChanged: (v) {
+                  if (_codError != null && DeliveryRules.codProblem(expected: job.codAmount, entered: v) == null) {
+                    setState(() => _codError = null);
+                  }
+                },
                 decoration: InputDecoration(
+                  errorText: _codError,
+                  errorMaxLines: 3,
                   labelText: 'COD collected (${peso(job.codAmount)})',
                   // The cash to collect, not the order total: on a split order the rest was paid with TapTapPay
                   helperText: job.paidWithWallet
@@ -657,22 +690,40 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
           ],
           const SizedBox(height: kSpace12),
           _primary(job.isReturn ? 'Mark as Returned' : 'Mark as Delivered', Icons.check_circle_outline, () {
-            final problem = _photo == null
-                ? 'Take a proof-of-delivery photo.'
-                : !job.isReturn && _otp.text.length != 6
-                    ? 'Enter the 6-digit delivery code from the buyer.'
-                    : job.collectsCod
-                        ? DeliveryRules.codProblem(expected: job.codAmount, entered: _cod.text)
-                        : null;
+            // Check every field, mark each wrong one in red, and keep the marks until it is fixed
+            final photoProblem = _photo == null ? 'Take a proof-of-delivery photo.' : null;
+            final otpProblem = !job.isReturn && _otp.text.length != 6
+                ? 'Enter the 6-digit delivery code from the buyer.'
+                : null;
+            final codProblem = !job.isReturn && job.collectsCod
+                ? DeliveryRules.codProblem(expected: job.codAmount, entered: _cod.text)
+                : null;
+            setState(() {
+              _photoError = photoProblem;
+              _otpError = otpProblem;
+              _codError = codProblem;
+            });
+            final problem = photoProblem ?? otpProblem ?? codProblem;
             if (problem != null) {
               showResult(context, false, '', problem);
               return;
             }
             _act(
-                (cp) => cp.deliver(job,
-                    photo: _photo!,
-                    otp: job.isReturn ? '' : _otp.text,
-                    codAmount: job.collectsCod ? _cod.text.trim() : null),
+                (cp) async {
+                  final done = await cp.deliver(job,
+                      photo: _photo!,
+                      otp: job.isReturn ? '' : _otp.text,
+                      codAmount: job.collectsCod ? _cod.text.trim() : null);
+                  // The server refused the code or the cash: mark that field in red as well
+                  final code = cp.lastDeliverErrorCode ?? '';
+                  if (done == null && mounted) {
+                    setState(() {
+                      if (code.startsWith('otp_')) _otpError = cp.error;
+                      if (code == 'cod_mismatch') _codError = cp.error;
+                    });
+                  }
+                  return done;
+                },
                 job.isReturn ? 'Returned to the seller.' : 'Parcel delivered.');
           }),
           const SizedBox(height: kSpace8),

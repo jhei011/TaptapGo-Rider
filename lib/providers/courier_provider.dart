@@ -39,6 +39,11 @@ class CourierProvider extends ChangeNotifier {
 
   String? _error;
   int? _lastErrorStatus;
+  String? _lastDeliverErrorCode;
+
+  /// The server's reason for refusing the last Mark as Delivered (`otp_wrong`, `otp_locked`,
+  /// `cod_mismatch`…), so the screen can mark the field that is wrong.
+  String? get lastDeliverErrorCode => _lastDeliverErrorCode;
 
   Timer? _heartbeat;
   Timer? _offerPoll;
@@ -325,6 +330,7 @@ class CourierProvider extends ChangeNotifier {
   /// [pendingFor] has it.
   Future<RiderJob?> deliver(RiderJob job, {required File photo, required String otp, String? codAmount}) async {
     _error = null;
+    _lastDeliverErrorCode = null;
     final position = (await LocationService.current()
             .timeout(const Duration(seconds: 8), onTimeout: () => const LocationReading.unavailable(LocationProblem.serviceOff)))
         .position;
@@ -336,6 +342,7 @@ class CourierProvider extends ChangeNotifier {
       return done;
     } on ApiError catch (e) {
       _error = e.message;
+      _lastDeliverErrorCode = e.errorCode;
     } catch (_) {
       await _keepPending(PendingDelivery(
         jobId: job.id, trackingNumber: job.trackingNumber, otp: otp, codAmount: codAmount,
