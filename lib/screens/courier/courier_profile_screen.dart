@@ -9,6 +9,7 @@ import '../../widgets/bh_offline_banner.dart';
 import '../../widgets/field_card.dart';
 import 'rider_profile_widgets.dart';
 import '../../widgets/teal_pattern.dart';
+import '../../core/services/rider_idle_policy.dart';
 import '../../widgets/confirm_logout.dart';
 import '../../widgets/reveal.dart';
 
@@ -303,8 +304,10 @@ class _CourierProfileState extends State<CourierProfileScreen> {
       Text('—', style: kBodySm.copyWith(color: kTextMuted));
 
   Future<void> _logout(BuildContext ctx, AuthProvider auth) async {
-    // TaptapShop's "Log out?" dialog
-    final ok = await confirmLogoutDialog(ctx,
+    // Unsent deliveries block it; jobs or offers on the server (or no answer) get a warning
+    final ok = await confirmRiderLogout(ctx,
+        unsentDeliveries: ctx.read<CourierProvider>().pendingDeliveries.length,
+        checkWork: riderWorkCheck,
         message: "You'll go Offline and need to sign in again to take jobs.");
     if (ok && ctx.mounted) {
       final cp = ctx.read<CourierProvider>();

@@ -116,8 +116,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// One login for everyone: the account decides the panel. Riders (role `courier`) open the
-  /// Rider panel, linehaul couriers (role `linehaul`) the Linehaul Courier panel.
+  /// The account decides the panel: riders (role `courier`) open the Rider panel, linehaul
+  /// couriers (role `linehaul`) the Linehaul Courier panel. Other accounts are refused by
+  /// AuthProvider before getting here (TaptapGo is the rider app).
   void _openHome(bool ok) {
     final auth = context.read<AuthProvider>();
     if (ok && auth.user != null) {
@@ -126,10 +127,6 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, '/courier');
       } else if (role == 'linehaul') {
         Navigator.pushReplacementNamed(context, '/linehaul');
-      } else if (role == 'buyer') {
-        Navigator.pushReplacementNamed(context, '/buyer');
-      } else if (role == 'seller') {
-        Navigator.pushReplacementNamed(context, '/seller');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

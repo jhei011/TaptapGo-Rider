@@ -40,7 +40,11 @@ class AuthProvider extends ChangeNotifier {
   /// Riders and couriers may only work while their logistics company has them approved;
   /// the server refuses the rider endpoints otherwise. Null when [u] may use the app.
   static String? accessProblem(User u) {
-    if (!_isRider(u.role) || u.status == 'approved') return null;
+    // TaptapGo is the rider app; buyer, seller and other accounts use TaptapShop or the website
+    if (!_isRider(u.role)) {
+      return 'TaptapGo is for riders and linehaul couriers. Buyers and sellers, please use the TaptapShop app or website.';
+    }
+    if (u.status == 'approved') return null;
     return switch (u.status) {
       'pending_activation' => 'Your account has not been activated yet. Open the activation link in your email.',
       'pending'            => 'Your rider account is waiting for approval by your logistics company.',
@@ -138,6 +142,11 @@ class AuthProvider extends ChangeNotifier {
     await Api.deleteSavedUser().catchError((_) {});
     _user = null; _offline = false; _status = AuthStatus.unauthenticated; notifyListeners();
   }
+
+  /// The 30-minute idle logout (RiderIdlePolicy), only ever called when the server said the
+  /// rider has no job, offer or trip. The token is ended on the server too.
+  Future<void> endIdleSession() => _endSession(
+      'You were signed out after 30 minutes without activity. Log in again to take jobs.', revoke: true);
 
   void updateUser(User u) { _user = u; notifyListeners(); }
   void clearError()       { _error = null; notifyListeners(); }

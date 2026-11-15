@@ -21,6 +21,8 @@ MockClient fakeApi(List<String> calls) => MockClient((request) async {
       calls.add(key);
       final body = switch (key) {
         'GET /linehaul/home' => home,
+        // No active trip, so logging out shows the normal "Log out?" (an active trip gets a warning)
+        'GET /linehaul/trips' => <Object>[],
         'GET /me' => {'id': 9, 'name': 'Ernesto Villareal', 'email': 'ernesto.villareal@example.com', 'role': 'linehaul', 'status': 'approved'},
         'POST /logout' => {'message': 'Logged out successfully'},
         _ => null,

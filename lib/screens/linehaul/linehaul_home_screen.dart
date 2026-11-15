@@ -8,6 +8,7 @@ import '../../widgets/bh_app_bar.dart';
 import '../courier/rider_job_widgets.dart' show cardDecoration;
 import 'linehaul_trips_screen.dart';
 import '../../widgets/teal_pattern.dart';
+import '../../core/services/rider_idle_policy.dart';
 import '../../widgets/confirm_logout.dart';
 import '../../widgets/panel_label.dart';
 import '../../widgets/reveal.dart';
@@ -86,8 +87,9 @@ class LinehaulHomeScreenState extends State<LinehaulHomeScreen> with WidgetsBind
   }
 
   Future<void> _logout() async {
-    // TaptapShop's "Log out?" dialog
-    final ok = await confirmLogoutDialog(context, message: "You'll need to sign in again to see your trips.");
+    // An active trip gets a warning (the server is asked; no answer counts as active)
+    final ok = await confirmRiderLogout(context,
+        unsentDeliveries: 0, checkWork: linehaulWorkCheck, message: "You'll need to sign in again to see your trips.");
     if (!ok || !mounted) return;
     await context.read<AuthProvider>().logout();
     // Clear the history so Back cannot return to account screens (TC-COU-052)

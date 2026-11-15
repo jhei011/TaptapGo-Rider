@@ -196,7 +196,9 @@ void main() {
       expect(AuthProvider.accessProblem(u('linehaul', 'approved')), isNull);
       expect(AuthProvider.accessProblem(u('courier', 'suspended')), contains('suspended'));
       expect(AuthProvider.accessProblem(u('courier', 'pending_activation')), contains('activated'));
-      expect(AuthProvider.accessProblem(u('buyer', 'unverified')), isNull); // not a rider account
+      // TaptapGo is the rider app now: buyer and seller accounts are refused (they use TaptapShop)
+      expect(AuthProvider.accessProblem(u('buyer', 'approved')), contains('TaptapGo is for riders'));
+      expect(AuthProvider.accessProblem(u('seller', 'approved')), contains('TaptapGo is for riders'));
     });
 
     test('opening the app with no connection keeps the rider signed in with the last confirmed user', () async {

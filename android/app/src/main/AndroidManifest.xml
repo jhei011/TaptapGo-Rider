@@ -1,9 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Internet permission required for API calls -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- READ_EXTERNAL_STORAGE needed for image picker on older Android -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <!-- Rider documents (license, OR/CR) are chosen with the system file picker and photos are
+         taken with the camera, so no photo-library permission is needed on Android 13+.
+         Older Android (12 and below) may still need storage access for the picked file.
+         READ_MEDIA_IMAGES was for the buyer/seller sign-up gallery, removed from this rider app. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
     <!-- Rider location while Online and at delivery (RID-AVAIL-005, RID-DLV-011) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>

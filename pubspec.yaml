@@ -10,6 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # A clock tests can move forward (the rider's 30-minute idle logout)
+  clock: ^1.1.1
+
   # State management
   provider: ^6.1.2
 
@@ -19,8 +22,7 @@ dependencies:
   # Secure local storage for auth token
   flutter_secure_storage: ^9.0.0
 
-  # Image handling
-  cached_network_image: ^3.3.1
+  # Image handling (cached_network_image removed with the buyer/seller screens that used it)
 
   # Image picker (for valid ID, OR/CR uploads)
   image_picker: ^1.1.2
