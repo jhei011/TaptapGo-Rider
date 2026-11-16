@@ -106,6 +106,9 @@ class RiderVehicleSection extends StatelessWidget {
             body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(p['driver_license_number'] as String? ?? '—',
                   style: kMonoMd.copyWith(color: kTextPrimary, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+              const SizedBox(height: kSpace4),
+              Text('License type: ${(p['license_type'] as String?)?.trim().isNotEmpty == true ? p['license_type'] : 'Professional'}',
+                  key: const Key('licenseType'), style: kBodySm.copyWith(color: kTextSecondary)),
               const SizedBox(height: kSpace6),
               LicenseValidity(expiry: DateTime.tryParse(p['license_expiry_date'] as String? ?? '')),
             ]),
@@ -123,7 +126,11 @@ class RiderVehicleSection extends StatelessWidget {
             body: p['nbi_missing'] == true
                 ? Text('Missing. Upload it to take jobs.',
                     key: const Key('nbiMissing'), style: kBodySm.copyWith(color: kActionDestructive, fontWeight: FontWeight.w600))
-                : Text('On file', style: kBodySm.copyWith(color: kTextSecondary)),
+                : p['nbi_unverified'] == true
+                    ? Text('Waiting for your logistics company to verify it. You can take jobs once it is verified.',
+                        key: const Key('nbiUnverified'),
+                        style: kBodySm.copyWith(color: kStatusPendingFg, fontWeight: FontWeight.w600))
+                    : Text('Verified', key: const Key('nbiVerified'), style: kBodySm.copyWith(color: kTextSecondary)),
           ),
         ]),
       ),
@@ -187,7 +194,10 @@ class RiderVehicleSection extends StatelessWidget {
 
   Future<void> _editNbi(BuildContext context) async {
     final saved = await _showSheet(context, _EditNbiSheet(cp: cp));
-    if (saved == true && context.mounted) showResult(context, true, 'NBI clearance saved. You can now take jobs.', null);
+    if (saved == true && context.mounted) {
+      showResult(context, true,
+          'NBI clearance saved. Your logistics company will verify it; you can take jobs once it is verified.', null);
+    }
   }
 }
 

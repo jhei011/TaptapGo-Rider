@@ -25,6 +25,13 @@ MockClient fakeApi(List<String> calls) => MockClient((request) async {
         'GET /linehaul/trips' => <Object>[],
         'GET /me' => {'id': 9, 'name': 'Ernesto Villareal', 'email': 'ernesto.villareal@example.com', 'role': 'linehaul', 'status': 'approved'},
         'POST /logout' => {'message': 'Logged out successfully'},
+        'GET /notifications' => [
+            {'id': 'n1', 'read': false, 'created_at': '2026-11-17T08:00:00+08:00',
+             'data': {'trip_id': 7, 'code': 'LH-0007', 'kind': 'assigned', 'message': 'New linehaul trip LH-0007: HUB-QC to HUB-BUL.'}},
+            {'id': 'n2', 'read': true, 'created_at': '2026-11-16T08:00:00+08:00',
+             'data': {'trip_id': 5, 'code': 'LH-0005', 'kind': 'completed', 'message': 'Trip LH-0005 is complete.'}},
+          ],
+        'POST /notifications/read' => {'message': 'Notifications marked as read.', 'unread': 0},
         _ => null,
       };
       return body == null
@@ -77,6 +84,32 @@ void main() {
       expect(auth.user!.role, 'linehaul');
       expect(auth.user!.name, 'Ernesto Villareal');
       expect(calls, ['GET /me']);
+    }, () => fakeApi(calls));
+  });
+
+  testWidgets('the linehaul home has a notification bell with the unread trips; the list marks them read', (tester) async {
+    final calls = <String>[];
+    await http.runWithClient(() async {
+      await tester.pumpWidget(ChangeNotifierProvider(
+        create: (_) => AuthProvider(),
+        child: MaterialApp(theme: AppTheme.light, home: const LinehaulHomeScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      final bell = find.byKey(const Key('linehaulNotificationBell'));
+      expect(bell, findsOneWidget);
+      expect(find.descendant(of: bell, matching: find.text('1')), findsOneWidget);
+
+      await tester.tap(bell);
+      await tester.pumpAndSettle();
+      expect(find.text('New linehaul trip LH-0007: HUB-QC to HUB-BUL.'), findsOneWidget);
+      expect(find.text('Trip LH-0005 is complete.'), findsOneWidget);
+      expect(find.text('Open trip'), findsNWidgets(2));
+
+      await tester.tap(find.byKey(const Key('linehaulMarkAllRead')));
+      await tester.pumpAndSettle();
+      expect(calls, contains('POST /notifications/read'));
+      expect(find.byKey(const Key('linehaulMarkAllRead')), findsNothing);
     }, () => fakeApi(calls));
   });
 

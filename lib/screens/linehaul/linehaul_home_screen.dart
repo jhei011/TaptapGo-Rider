@@ -6,6 +6,7 @@ import '../../core/theme/app_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/bh_app_bar.dart';
 import '../courier/rider_job_widgets.dart' show cardDecoration;
+import 'linehaul_notifications_screen.dart';
 import 'linehaul_trips_screen.dart';
 import '../../widgets/teal_pattern.dart';
 import '../../core/services/rider_idle_policy.dart';
@@ -32,6 +33,7 @@ class LinehaulHomeScreenState extends State<LinehaulHomeScreen> with WidgetsBind
   String? _error;
   bool _loading = true;
   Timer? _poll;
+  final _notifications = LinehaulNotifications();
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class LinehaulHomeScreenState extends State<LinehaulHomeScreen> with WidgetsBind
   @override
   void dispose() {
     _poll?.cancel();
+    _notifications.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -58,6 +61,7 @@ class LinehaulHomeScreenState extends State<LinehaulHomeScreen> with WidgetsBind
 
   Future<void> _load() async {
     _loadTrips();
+    _notifications.load();
     setState(() { _loading = true; _error = null; });
     try {
       final d = await Api.get('/linehaul/home') as Map<String, dynamic>;
@@ -106,7 +110,10 @@ class LinehaulHomeScreenState extends State<LinehaulHomeScreen> with WidgetsBind
         // Logo row only, like the rider's Home (the card below says which panel this is)
         title: BhAppBar.kWordmark,
         showBack: false,
-        actions: [IconButton(icon: const Icon(Icons.logout), tooltip: 'Log Out', onPressed: _logout)],
+        actions: [
+          LinehaulNotificationBell(store: _notifications),
+          IconButton(icon: const Icon(Icons.logout), tooltip: 'Log Out', onPressed: _logout),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _load,

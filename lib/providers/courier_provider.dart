@@ -496,6 +496,10 @@ class CourierProvider extends ChangeNotifier {
   /// No NBI clearance on file: the server refuses Online, offers and new jobs until it is uploaded.
   bool get nbiMissing => _profile?['nbi_missing'] == true;
 
+  /// An NBI clearance was uploaded but the logistics company has not verified it yet:
+  /// the server still refuses Online and jobs until it does.
+  bool get nbiUnverified => !nbiMissing && _profile?['nbi_unverified'] == true;
+
   int? _requestedTab;
 
   /// Asks the rider shell to switch tab (e.g. Home's "Upload NBI clearance" opens Profile, tab 3).

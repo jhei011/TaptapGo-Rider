@@ -25,10 +25,10 @@ class _Gps implements LocationSource {
   Future<void> openSettings(LocationProblem problem) async {}
 }
 
-Map<String, dynamic> _profile({required bool nbiMissing}) => {
+Map<String, dynamic> _profile({required bool nbiMissing, bool nbiUnverified = false}) => {
       'id': 5, 'name': 'Pedro Jose Garcia', 'status': 'approved', 'logistics_company': 'Bilis Hatid Express Inc.',
       'driver_license_number': 'N01-23-456789', 'license_expiry_date': '2030-03-22', 'vehicle_type': 'motorcycle',
-      'plate_number': '123ABC', 'needs_reverification': false, 'nbi_missing': nbiMissing,
+      'plate_number': '123ABC', 'needs_reverification': false, 'nbi_missing': nbiMissing, 'nbi_unverified': nbiUnverified,
       'documents': {
         'driver_license': {'name': 'license.jpg', 'url': 'https://example.com/l'},
         'or_cr': {'name': 'or_cr.pdf', 'url': 'https://example.com/o'},
@@ -36,14 +36,14 @@ Map<String, dynamic> _profile({required bool nbiMissing}) => {
       },
     };
 
-http.Client _api({required bool nbiMissing}) => MockClient((r) async {
+http.Client _api({required bool nbiMissing, bool nbiUnverified = false}) => MockClient((r) async {
       final path = r.url.path.replaceFirst('/api', '');
       final Object body = switch (path) {
         '/me' => {'id': 5, 'name': 'Pedro Jose Garcia', 'email': 'rider@example.test', 'role': 'courier', 'status': 'approved'},
         '/courier/dashboard' => {'is_online': false, 'total_delivered': 0, 'active_jobs': 0, 'delivered_today': 0},
         '/courier/jobs' => {'active': [], 'recent': []},
         '/courier/offers' => [],
-        '/courier/profile' => _profile(nbiMissing: nbiMissing),
+        '/courier/profile' => _profile(nbiMissing: nbiMissing, nbiUnverified: nbiUnverified),
         _ => {'message': 'Not found'},
       };
       final status = body is Map && body['message'] == 'Not found' ? 404 : 200;
@@ -102,8 +102,21 @@ void main() {
       final cp = await pumpHome(tester, nbiMissing: false);
       expect(cp.nbiMissing, isFalse);
       expect(find.byKey(const Key('nbiBanner')), findsNothing);
+      expect(find.byKey(const Key('nbiPendingBanner')), findsNothing);
       cp.stop();
     }, () => _api(nbiMissing: false));
+  });
+
+  testWidgets('an uploaded NBI the logistics company has not verified yet: Home says it is waiting, no "ready" message', (tester) async {
+    await http.runWithClient(() async {
+      final cp = await pumpHome(tester, nbiMissing: false);
+      expect(cp.nbiUnverified, isTrue);
+      expect(find.byKey(const Key('nbiBanner')), findsNothing);
+      expect(find.byKey(const Key('nbiPendingBanner')), findsOneWidget);
+      expect(find.text('NBI clearance waiting for verification'), findsOneWidget);
+      expect(find.textContaining('You can now take jobs'), findsNothing);
+      cp.stop();
+    }, () => _api(nbiMissing: false, nbiUnverified: true));
   });
 
   testWidgets('Profile: NBI clearance is marked missing; its upload needs a photo before Save', (tester) async {

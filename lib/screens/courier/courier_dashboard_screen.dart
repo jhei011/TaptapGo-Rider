@@ -70,6 +70,11 @@ class _CourierDashState extends State<CourierDashboardScreen> {
                         _NbiBanner(onUpload: () => cp.requestTab(3)),
                         const SizedBox(height: kSpace14),
                       ],
+                      // ── NBI uploaded, not verified yet: still no Online, no jobs ──
+                      if (cp.nbiUnverified) ...[
+                        const _NbiPendingBanner(),
+                        const SizedBox(height: kSpace14),
+                      ],
 
                       // ── Messages such as "account suspended" ─────────────
                       if (cp.error != null) ...[
@@ -579,6 +584,34 @@ class _NbiBanner extends StatelessWidget {
               style: TextButton.styleFrom(foregroundColor: kStatusFailedFg),
               onPressed: onUpload,
             ),
+          ),
+        ]),
+      );
+}
+
+/// The NBI clearance is uploaded but the logistics company has not verified it yet.
+class _NbiPendingBanner extends StatelessWidget {
+  const _NbiPendingBanner();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        key: const Key('nbiPendingBanner'),
+        padding: const EdgeInsets.all(kSpace12),
+        decoration: BoxDecoration(
+          color: kStatusPendingBg,
+          borderRadius: BorderRadius.circular(kRadiusMd),
+          border: Border.all(color: kStatusPendingFg.withValues(alpha: 0.3)),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(Icons.hourglass_top_rounded, color: kStatusPendingFg, size: 20),
+          const SizedBox(width: kSpace8),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('NBI clearance waiting for verification', style: kLabelMd.copyWith(color: kStatusPendingFg)),
+              const SizedBox(height: 2),
+              Text('Your logistics company is checking it. You can go Online and take jobs once it is verified.',
+                  style: kBodySm.copyWith(color: kStatusPendingFg)),
+            ]),
           ),
         ]),
       );
