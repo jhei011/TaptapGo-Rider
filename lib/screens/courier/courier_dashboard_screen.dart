@@ -65,6 +65,12 @@ class _CourierDashState extends State<CourierDashboardScreen> {
                       Reveal(child: _WelcomeBanner(user: user, cp: cp, db: db)),
                       const SizedBox(height: kSpace14),
 
+                      // ── No NBI clearance on file: no Online, no jobs until it is uploaded ──
+                      if (cp.nbiMissing) ...[
+                        _NbiBanner(onUpload: () => cp.requestTab(3)),
+                        const SizedBox(height: kSpace14),
+                      ],
+
                       // ── Messages such as "account suspended" ─────────────
                       if (cp.error != null) ...[
                         _ErrorBanner(message: cp.error!, onClose: cp.clearError),
@@ -535,6 +541,47 @@ class _PendingDeliveriesBanner extends StatelessWidget {
       ]),
     );
   }
+}
+
+/// The rider has no NBI clearance on file: they cannot go Online or take jobs until they upload it.
+class _NbiBanner extends StatelessWidget {
+  final VoidCallback onUpload;
+  const _NbiBanner({required this.onUpload});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        key: const Key('nbiBanner'),
+        padding: const EdgeInsets.all(kSpace12),
+        decoration: BoxDecoration(
+          color: kStatusFailedBg,
+          borderRadius: BorderRadius.circular(kRadiusMd),
+          border: Border.all(color: kStatusFailedFg.withValues(alpha: 0.3)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(Icons.verified_user_outlined, color: kStatusFailedFg, size: 20),
+            const SizedBox(width: kSpace8),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('NBI clearance needed', style: kLabelMd.copyWith(color: kStatusFailedFg)),
+                const SizedBox(height: 2),
+                Text('Upload your NBI clearance in Profile to go Online and take jobs.',
+                    style: kBodySm.copyWith(color: kStatusFailedFg)),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: kSpace8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              icon: const Icon(Icons.upload_file_outlined, size: 18),
+              label: const Text('Upload NBI clearance'),
+              style: TextButton.styleFrom(foregroundColor: kStatusFailedFg),
+              onPressed: onUpload,
+            ),
+          ),
+        ]),
+      );
 }
 
 class _ErrorBanner extends StatelessWidget {

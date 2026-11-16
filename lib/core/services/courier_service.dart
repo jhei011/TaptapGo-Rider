@@ -103,6 +103,12 @@ class CourierService {
         if (orCr != null) 'or_cr': orCr,
       }) as Map<String, dynamic>)['profile'] as Map<String, dynamic>;
 
+  /// POST /courier/profile/nbi: the NBI clearance a rider needs before taking jobs.
+  static Future<Map<String, dynamic>> updateNbi(File nbiClearance) async =>
+      (await Api.postMultipart('/courier/profile/nbi', fields: const {}, files: {
+        'nbi_clearance': nbiClearance,
+      }) as Map<String, dynamic>)['profile'] as Map<String, dynamic>;
+
   static Future<Map<String, dynamic>> updateLicense({DateTime? expiry, File? document}) async =>
       (await Api.postMultipart('/courier/profile/license', fields: {
         if (expiry != null) 'license_expiry_date': _date(expiry),

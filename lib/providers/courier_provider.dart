@@ -95,7 +95,8 @@ class CourierProvider extends ChangeNotifier {
       if (_dashboard?['is_online'] != null) {
         _setOnline(_dashboard!['is_online'] as bool);
       }
-      await Future.wait([loadJobs(), loadOffers(), loadNotifications()]);
+      // The profile tells Home whether the NBI clearance is missing
+      await Future.wait([loadJobs(), loadOffers(), loadNotifications(), loadProfile()]);
     } on ApiError catch (e) { _error = e.message; }
     catch (_) { _error = 'Failed to load dashboard.'; }
     _loadingDash = false; notifyListeners();
@@ -487,6 +488,28 @@ class CourierProvider extends ChangeNotifier {
   Future<bool> updateLicense({DateTime? expiry, File? document}) => _run(() async {
         _profile = await CourierService.updateLicense(expiry: expiry, document: document);
       });
+
+  Future<bool> updateNbi(File nbiClearance) => _run(() async {
+        _profile = await CourierService.updateNbi(nbiClearance);
+      });
+
+  /// No NBI clearance on file: the server refuses Online, offers and new jobs until it is uploaded.
+  bool get nbiMissing => _profile?['nbi_missing'] == true;
+
+  int? _requestedTab;
+
+  /// Asks the rider shell to switch tab (e.g. Home's "Upload NBI clearance" opens Profile, tab 3).
+  void requestTab(int index) {
+    _requestedTab = index;
+    notifyListeners();
+  }
+
+  /// The tab asked for, once; null when none is pending.
+  int? takeRequestedTab() {
+    final tab = _requestedTab;
+    _requestedTab = null;
+    return tab;
+  }
 
   void clearError() { _error = null; notifyListeners(); }
 

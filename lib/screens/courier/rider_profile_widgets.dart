@@ -110,6 +110,21 @@ class RiderVehicleSection extends StatelessWidget {
               LicenseValidity(expiry: DateTime.tryParse(p['license_expiry_date'] as String? ?? '')),
             ]),
           ),
+          Divider(height: 1, indent: kSpace16, endIndent: kSpace16, color: kBorderDefault),
+
+          // ── NBI clearance (required before taking jobs) ──
+          _ItemTile(
+            key: const Key('nbiTile'),
+            icon: Icons.verified_user_outlined,
+            title: 'NBI clearance',
+            action: p['nbi_missing'] == true ? 'Upload NBI' : 'Update NBI',
+            actionIcon: Icons.upload_file_outlined,
+            onAction: () => _editNbi(context),
+            body: p['nbi_missing'] == true
+                ? Text('Missing. Upload it to take jobs.',
+                    key: const Key('nbiMissing'), style: kBodySm.copyWith(color: kActionDestructive, fontWeight: FontWeight.w600))
+                : Text('On file', style: kBodySm.copyWith(color: kTextSecondary)),
+          ),
         ]),
       ),
       const SizedBox(height: kSpace12),
@@ -123,6 +138,7 @@ class RiderVehicleSection extends StatelessWidget {
           const SizedBox(height: kSpace10),
           _document(context, "Driver's license", docs['driver_license']),
           _document(context, 'OR/CR', docs['or_cr']),
+          _document(context, 'NBI clearance', docs['nbi_clearance']),
         ]),
       ),
     ]);
@@ -168,6 +184,62 @@ class RiderVehicleSection extends StatelessWidget {
     final saved = await _showSheet(context, _EditLicenseSheet(cp: cp, profile: p));
     if (saved == true && context.mounted) showResult(context, true, 'License details saved.', null);
   }
+
+  Future<void> _editNbi(BuildContext context) async {
+    final saved = await _showSheet(context, _EditNbiSheet(cp: cp));
+    if (saved == true && context.mounted) showResult(context, true, 'NBI clearance saved. You can now take jobs.', null);
+  }
+}
+
+/// Upload the NBI clearance: required before the rider can go Online or take jobs.
+class _EditNbiSheet extends StatefulWidget {
+  final CourierProvider cp;
+  const _EditNbiSheet({required this.cp});
+
+  @override
+  State<_EditNbiSheet> createState() => _EditNbiSheetState();
+}
+
+class _EditNbiSheetState extends State<_EditNbiSheet> {
+  File? _nbi;
+  bool _saving = false;
+  String? _error;
+
+  Future<void> _save() async {
+    setState(() { _saving = true; _error = null; });
+    final ok = await widget.cp.updateNbi(_nbi!);
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context, true);
+    } else {
+      setState(() { _saving = false; _error = widget.cp.error ?? 'Could not save. Please try again.'; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => _SheetFrame(
+        icon: Icons.verified_user_outlined,
+        title: 'NBI clearance',
+        subtitle: 'Upload a photo of your valid NBI clearance. You need it to go Online and take jobs.',
+        footer: _footer(context, saveLabel: 'Save', saving: _saving, onSave: !_saving && _nbi != null ? _save : null, error: _error),
+        children: [
+          _sectionLabel('NBI clearance', trailing: 'Required'),
+          DocumentPicker(
+            label: 'Upload your NBI clearance',
+            file: _nbi,
+            onPicked: (f) => setState(() { _nbi = f; _error = null; }),
+            onRemove: () => setState(() => _nbi = null),
+          ),
+          if (_nbi == null)
+            Padding(
+              key: const Key('nbiRequired'),
+              padding: const EdgeInsets.only(top: kSpace6),
+              child: Text('Add a photo of your NBI clearance to save.', style: kBodySm.copyWith(color: kActionDestructive)),
+            ),
+          const SizedBox(height: kSpace16),
+          _note(Icons.verified_user_outlined, 'Your logistics company checks it. You can take jobs as soon as it is saved.'),
+        ],
+      );
 }
 
 Future<bool?> _showSheet(BuildContext context, Widget sheet) => showModalBottomSheet<bool>(
@@ -203,7 +275,7 @@ class _ItemTile extends StatelessWidget {
   final IconData actionIcon;
   final VoidCallback onAction;
   final Widget body;
-  const _ItemTile({required this.icon, required this.title, required this.action, required this.actionIcon,
+  const _ItemTile({super.key, required this.icon, required this.title, required this.action, required this.actionIcon,
       required this.onAction, required this.body});
 
   @override

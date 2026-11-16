@@ -61,6 +61,11 @@ class _CourierShellState extends State<CourierShell> {
   Widget build(BuildContext context) {
     final cp = context.watch<CourierProvider>();
     final isOnline = cp.isOnline ?? false;
+    // Another screen asked to open a tab (Home's "Upload NBI clearance" → Profile)
+    final requested = cp.takeRequestedTab();
+    if (requested != null && requested != _idx) {
+      WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _onTabTap(requested); });
+    }
 
     return Scaffold(
       // Every tab stays alive; switching fades the new one in (TaptapShop)
