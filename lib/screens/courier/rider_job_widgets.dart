@@ -90,9 +90,12 @@ class RiderJobCard extends StatelessWidget {
               Text(
                   job.isReturn
                       ? 'Return'
-                      : job.isCod
-                          ? 'COD ${peso(job.cashAmount)}'
-                          : 'Paid',
+                      // No cash is taken at a pickup; the delivery rider collects it later
+                      : job.isPickup
+                          ? 'No cash at pickup'
+                          : job.isCod
+                              ? 'COD ${peso(job.cashAmount)}'
+                              : 'Paid',
                   style: kLabelMd.copyWith(color: kBrand700)),
             ]),
           ]),

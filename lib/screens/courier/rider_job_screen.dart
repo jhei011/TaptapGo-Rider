@@ -479,7 +479,8 @@ class _RiderJobScreenState extends State<RiderJobScreen> {
             // Part or all was paid in the buyer's app: collect only the cash part
             if (job.orderTotal != null) _row('Order total', peso(job.orderTotal!)),
             _row('Paid via TapTapPay', peso(job.walletPaid)),
-            _row(job.isActive ? 'Cash to collect' : 'Cash collected',
+            // No cash changes hands at a pickup: the delivery rider collects it from the buyer
+            _row(job.isPickup ? 'Cash at delivery' : (job.isActive ? 'Cash to collect' : 'Cash collected'),
                 job.isCod ? peso(job.cashAmount) : '${peso(0)} · nothing to collect'),
           ] else
             _row('Payment', job.isCod ? 'COD ${peso(job.cashAmount)}' : '${peso(0)} COD · ${job.paymentLabel}'),

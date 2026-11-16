@@ -11,6 +11,20 @@ import 'rider_job_widgets.dart';
 import '../../widgets/teal_pattern.dart';
 import '../../widgets/reveal.dart';
 
+/// "Pickup: 15% of the shipping fee · Delivery: 40% · Failed attempt: ₱0.00", from the server's
+/// pay_rule; null when the server sends none.
+String? payRuleText(Object? rule) {
+  if (rule is! Map) return null;
+  String pct(Object? v) {
+    final d = v is num ? v.toDouble() : double.tryParse('$v');
+    if (d == null) return '';
+    return '${d == d.roundToDouble() ? d.toInt() : d}%';
+  }
+  final pickup = pct(rule['pickup_percent']), delivery = pct(rule['delivery_percent']);
+  if (pickup.isEmpty || delivery.isEmpty) return null;
+  return 'Pickup: $pickup of the shipping fee · Delivery: $delivery · Failed attempt: ₱0.00';
+}
+
 /// Earnings, job history and COD to remit (Rider Modules R7).
 class CourierEarningsScreen extends StatefulWidget {
   const CourierEarningsScreen({super.key});
@@ -136,9 +150,13 @@ class _CourierEarningsState extends State<CourierEarningsScreen> {
               _total('This week', n('week_earnings')),
               _total('This month', n('month_earnings')),
             ]),
-            const SizedBox(height: kSpace8),
-            Text('₱30.00 per pickup · ₱50.00 per delivery · ₱0.00 per failed attempt',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 11)),
+            // How pay is worked out, as the server sends it (a share of each order's shipping fee).
+            // An older server sends no rule: then nothing is shown rather than made-up amounts.
+            if (payRuleText(data['pay_rule']) case final rule?) ...[
+              const SizedBox(height: kSpace8),
+              Text(rule, key: const Key('payRule'),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 11)),
+            ],
           ]),
         ),
         const SizedBox(height: kSpace14),

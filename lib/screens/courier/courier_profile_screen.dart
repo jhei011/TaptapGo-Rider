@@ -12,6 +12,7 @@ import '../../widgets/teal_pattern.dart';
 import '../../core/services/rider_idle_policy.dart';
 import '../../widgets/confirm_logout.dart';
 import '../../widgets/reveal.dart';
+import '../../widgets/change_password_sheet.dart';
 
 class CourierProfileScreen extends StatefulWidget {
   const CourierProfileScreen({super.key});
@@ -200,6 +201,10 @@ class _CourierProfileState extends State<CourierProfileScreen> {
               // ── Rider, vehicle and documents ──────────────────────────────
               RiderVehicleSection(cp: cp),
               const SizedBox(height: kSpace20),
+
+              // ── Change password ───────────────────────────────────────────
+              const ChangePasswordButton(),
+              const SizedBox(height: kSpace12),
 
               // ── Logout ────────────────────────────────────────────────────
               OutlinedButton.icon(

@@ -143,6 +143,18 @@ class AuthService {
     }
   }
 
+  // ── Change Password ─────────────────────────────────────────────────────
+  /// POST /me/password: the current password and a new one, typed twice. The server signs
+  /// this account out on other phones. Returns the server's message.
+  static Future<String> changePassword({required String current, required String password, required String confirmation}) async {
+    final d = await Api.post('/me/password', body: {
+      'current_password': current,
+      'password': password,
+      'password_confirmation': confirmation,
+    }) as Map<String, dynamic>;
+    return (d['message'] as String?) ?? 'Your password has been changed.';
+  }
+
   // ── Forgot Password ─────────────────────────────────────────────────────
   /// POST /forgot-password → sends a reset link to the given email.
   static Future<void> forgotPassword(String email) async {

@@ -11,6 +11,16 @@ import '../../widgets/tap.dart';
 import '../courier/rider_job_widgets.dart' show cardDecoration;
 import '../../widgets/reveal.dart';
 
+/// What Navigate searches for in the maps app: the hub's street address. A hub name such as
+/// "Dvidhub Hub" is not a place on the map and made Google Maps suggest another town, so the
+/// name is used only when a hub has no address.
+String hubMapsQuery(Map hub) {
+  final address = (hub['address'] as String?)?.trim() ?? '';
+  if (address.isNotEmpty) return address;
+  return [hub['name'], hub['municipality'], hub['province']]
+      .whereType<String>().map((s) => s.trim()).where((s) => s.isNotEmpty).join(', ');
+}
+
 /// Linehaul courier panel: hub-to-hub trips. A trip is one truck run from an origin hub to the next hub
 /// with the parcels hub staff loaded for this courier (GET /api/linehaul/trips).
 ///
@@ -267,8 +277,7 @@ class _LinehaulTripDetailScreenState extends State<LinehaulTripDetailScreen> {
 
   /// Opens the hub in the phone's maps app (as the rider's Navigate does).
   Future<void> _navigate(Map hub) async {
-    final address = (hub['address'] as String?)?.trim();
-    final query = [hub['name'], if (address != null && address.isNotEmpty) address].join(', ');
+    final query = hubMapsQuery(hub);
     final uri = Platform.isAndroid
         ? Uri.parse('geo:0,0?q=${Uri.encodeComponent(query)}')
         : Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}');

@@ -12,6 +12,7 @@ import '../../core/services/rider_idle_policy.dart';
 import '../../widgets/confirm_logout.dart';
 import '../../widgets/panel_label.dart';
 import '../../widgets/reveal.dart';
+import '../../widgets/change_password_sheet.dart';
 
 /// Home tab of the Linehaul Courier panel: a linehaul driver who moves parcels between hubs
 /// (Account Creation, Courier role: TC-COU-032). Couriers get no rider job offers or rider screens.
@@ -128,6 +129,9 @@ class LinehaulHomeScreenState extends State<LinehaulHomeScreen> with WidgetsBind
             Reveal(index: 1, child: _tripsSection()),
             const SizedBox(height: kSpace12),
             Reveal(index: 2, child: _details(home)),
+            const SizedBox(height: kSpace16),
+            // Couriers have no Profile tab: their account action lives here
+            const Reveal(index: 3, child: ChangePasswordButton()),
           ],
         ]),
       ),
