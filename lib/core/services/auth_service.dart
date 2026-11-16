@@ -160,4 +160,19 @@ class AuthService {
   static Future<void> forgotPassword(String email) async {
     await Api.post('/forgot-password', body: {'email': email}, auth: false);
   }
+
+  // ── Reset Password ──────────────────────────────────────────────────────
+  /// POST /reset-password → resets the password using the token from the deep link.
+  static Future<void> resetPassword({
+    required String token,
+    required String email,
+    required String password,
+  }) async {
+    await Api.post('/reset-password', body: {
+      'token': token,
+      'email': email,
+      'password': password,
+      'password_confirmation': password,
+    }, auth: false);
+  }
 }
