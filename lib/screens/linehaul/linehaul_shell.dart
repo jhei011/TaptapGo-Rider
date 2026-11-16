@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/services/push_service.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/tap.dart';
@@ -29,6 +32,8 @@ class _LinehaulShellState extends State<LinehaulShell> {
     LinehaulTripsScreen(key: _historyKey, scope: 'history'),
   ];
 
+  StreamSubscription<PushMessage>? _pushes;
+
   @override
   void initState() {
     super.initState();
@@ -37,8 +42,39 @@ class _LinehaulShellState extends State<LinehaulShell> {
       // Only linehaul couriers use this panel; riders have their own
       if (user != null && user.role != 'linehaul') {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+        return;
       }
+      // A tapped push notification opens its trip (also the one that started the app)
+      PushService.pendingTap.addListener(_openTappedPush);
+      _openTappedPush();
+      // A push while the app is open: the new or finished trip shows right away
+      _pushes = PushService.received.listen((m) {
+        if (m.tap?.type != 'trip') return;
+        _homeKey.currentState?.reload();
+        _tripsKey.currentState?.reload();
+        _historyKey.currentState?.reload();
+      });
     });
+  }
+
+  void _openTappedPush() {
+    if (!mounted) return;
+    final tap = PushService.takeTap('trip');
+    if (tap == null) return;
+    _homeKey.currentState?.reload();
+    _tripsKey.currentState?.reload();
+    if (tap.opensDetail) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => LinehaulTripDetailScreen(tripId: tap.id!)));
+    } else {
+      _onTabTap(1);
+    }
+  }
+
+  @override
+  void dispose() {
+    PushService.pendingTap.removeListener(_openTappedPush);
+    _pushes?.cancel();
+    super.dispose();
   }
 
   void _onTabTap(int i) {

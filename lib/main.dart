@@ -26,6 +26,7 @@ import 'screens/courier/rider_notifications_screen.dart';
 import 'screens/courier/waybill_scanner_screen.dart';
 
 // Shared widgets
+import 'widgets/push_watcher.dart';
 import 'widgets/rider_idle_watcher.dart';
 import 'widgets/taptapgo_splash_new.dart';
 
@@ -49,6 +50,7 @@ class TaptapGoApp extends StatefulWidget {
 
 class _TaptapGoAppState extends State<TaptapGoApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
   Widget build(BuildContext context) {
@@ -63,9 +65,13 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
         // 30 minutes without activity signs the rider out, but never while the server shows
         // a job, offer or trip for them (or cannot be asked), and never from the background
         child: RiderIdleWatcher(
+        // Push notifications for whoever is logged in (new jobs, trips)
+        child: PushWatcher(
+        messengerKey: _messengerKey,
         child: Consumer<ThemeService>(
         builder: (context, themeService, _) => MaterialApp(
           navigatorKey: _navigatorKey,
+          scaffoldMessengerKey: _messengerKey,
           title: 'TaptapGo',
           debugShowCheckedModeBanner: false,
           // Every screen's colours follow the theme shown (light, dark or the phone's setting).
@@ -121,6 +127,7 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
             return null;
           },
         ),
+      ),
       ),
       ),
       ),

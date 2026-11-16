@@ -4,4 +4,6 @@
     <color name="splashBackground">#0E2A38</color>
     <!-- Adaptive launcher icon background — set by flutter_launcher_icons config -->
     <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Push notification accent (brand teal, kBrand600) -->
+    <color name="notificationColor">#2E7C82</color>
 </resources>

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/services/push_service.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/courier_provider.dart';
@@ -25,6 +28,8 @@ class _CourierShellState extends State<CourierShell> {
     CourierProfileScreen(),
   ];
 
+  StreamSubscription<PushMessage>? _pushes;
+
   @override
   void initState() {
     super.initState();
@@ -35,7 +40,37 @@ class _CourierShellState extends State<CourierShell> {
         return;
       }
       context.read<CourierProvider>().loadDashboard();
+      // A tapped push notification opens its job (also the one that started the app)
+      PushService.pendingTap.addListener(_openTappedPush);
+      _openTappedPush();
+      // A push while the app is open: the new job or offer shows without pulling to refresh
+      _pushes = PushService.received.listen((m) {
+        if (m.tap?.type != 'job' || !mounted) return;
+        final cp = context.read<CourierProvider>();
+        cp.loadDashboard();
+        cp.loadNotifications();
+        if (_idx == 1) cp.loadJobs();
+      });
     });
+  }
+
+  void _openTappedPush() {
+    if (!mounted) return;
+    final tap = PushService.takeTap('job');
+    if (tap == null) return;
+    context.read<CourierProvider>().loadNotifications();
+    if (tap.opensDetail) {
+      Navigator.pushNamed(context, '/courier/job', arguments: tap.id);
+    } else {
+      Navigator.pushNamed(context, '/courier/notifications');
+    }
+  }
+
+  @override
+  void dispose() {
+    PushService.pendingTap.removeListener(_openTappedPush);
+    _pushes?.cancel();
+    super.dispose();
   }
 
   void _onTabTap(int i) {

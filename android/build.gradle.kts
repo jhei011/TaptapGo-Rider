@@ -5,6 +5,10 @@ allprojects {
     }
 }
 
+plugins {
+    id("com.google.gms.google-services") version "4.4.0" apply false
+}
+
 // Force all plugins to compile against SDK 36 so file_picker / flutter_plugin_android_lifecycle build correctly
 subprojects {
     afterEvaluate {
