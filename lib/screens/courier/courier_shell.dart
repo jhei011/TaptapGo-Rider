@@ -39,8 +39,10 @@ class _CourierShellState extends State<CourierShell> {
         Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
         return;
       }
-      context.read<CourierProvider>().loadDashboard();
-      // A tapped push notification opens its job (also the one that started the app)
+      // A tapped push notification opens its job (also the one that started the app). The tap
+      // can arrive after this screen is built (Firebase starts after the login check), so it
+      // is checked again once Home has loaded.
+      context.read<CourierProvider>().loadDashboard().whenComplete(_openTappedPush);
       PushService.pendingTap.addListener(_openTappedPush);
       _openTappedPush();
       // A push while the app is open: the new job or offer shows without pulling to refresh
