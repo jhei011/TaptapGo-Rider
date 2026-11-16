@@ -382,7 +382,8 @@ void main() {
       }
       expect(find.text('Open'), findsNWidgets(2));
 
-      await tester.tap(find.text('Edit vehicle'));
+      expect(find.text('Edit vehicle'), findsNothing);
+      await tester.tap(find.text('Update OR/CR'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('plateField')), findsOneWidget);
       expect(find.text('Take photo'), findsOneWidget);

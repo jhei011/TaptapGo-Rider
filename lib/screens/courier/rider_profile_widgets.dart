@@ -86,8 +86,8 @@ class RiderVehicleSection extends StatelessWidget {
           _ItemTile(
             icon: _vehicleIcon(p['vehicle_type'] as String?),
             title: 'Vehicle',
-            action: 'Edit vehicle',
-            actionIcon: Icons.edit_outlined,
+            action: 'Update OR/CR',
+            actionIcon: Icons.upload_file_outlined,
             onAction: () => _editVehicle(context, p),
             body: Row(children: [
               Expanded(child: Text(_cap(p['vehicle_type'] as String?), style: kLabelMd.copyWith(color: kTextPrimary))),
@@ -122,7 +122,7 @@ class RiderVehicleSection extends StatelessWidget {
           Text('Documents', style: kHeadingSm.copyWith(color: kTextPrimary)),
           const SizedBox(height: kSpace10),
           _document(context, "Driver's license", docs['driver_license']),
-          _document(context, 'Vehicle OR/CR', docs['or_cr']),
+          _document(context, 'OR/CR', docs['or_cr']),
         ]),
       ),
     ]);
@@ -526,8 +526,8 @@ class _EditVehicleSheetState extends State<_EditVehicleSheet> {
     final type = widget.profile['vehicle_type'] as String?;
     return _SheetFrame(
       icon: _vehicleIcon(type),
-      title: 'Edit vehicle',
-      subtitle: 'Upload a photo of your latest OR/CR, and update your plate number if it changed.',
+      title: 'Update OR/CR',
+      subtitle: 'Upload a photo of your latest OR/CR. Change the plate number too if it changed.',
       footer: _footer(context, saveLabel: 'Save changes', saving: _saving, onSave: _canSave ? _save : null, error: _error),
       children: [
         // Live preview of the plate
