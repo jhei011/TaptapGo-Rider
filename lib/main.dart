@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:app_links/app_links.dart';
 
 import 'core/demo/demo_api.dart';
 import 'core/theme/app_theme.dart';
@@ -14,6 +15,7 @@ import 'providers/courier_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_courier_screen.dart';
 import 'screens/auth/rider_activation_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
 
 // TaptapGo is the rider app: the Rider panel and the Linehaul Courier panel only.
 // Buyers and sellers use TaptapShop.
@@ -51,6 +53,34 @@ class TaptapGoApp extends StatefulWidget {
 class _TaptapGoAppState extends State<TaptapGoApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+  }
+
+  void _initDeepLinks() {
+    final appLinks = AppLinks();
+    appLinks.getInitialLink().then((uri) {
+      if (uri != null) _handleDeepLink(uri);
+    });
+    appLinks.uriLinkStream.listen(_handleDeepLink);
+  }
+
+  void _handleDeepLink(Uri uri) {
+    // taptapgo://reset-password?token=...&email=...
+    if (uri.scheme == 'taptapgo' && uri.host == 'reset-password') {
+      final token = uri.queryParameters['token'];
+      final email = uri.queryParameters['email'];
+      if (token != null && email != null) {
+        _navigatorKey.currentState?.pushNamed(
+          '/reset-password',
+          arguments: {'token': token, 'email': email},
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +150,18 @@ class _TaptapGoAppState extends State<TaptapGoApp> {
               if (token != null && token.isNotEmpty) {
                 return MaterialPageRoute(
                   builder: (_) => RiderActivationScreen(token: token),
+                );
+              }
+            }
+
+            // /reset-password?token=X&email=Y (from taptapgo:// deep link)
+            if (settings.name == '/reset-password') {
+              final args = settings.arguments as Map<String, dynamic>?;
+              final token = args?['token'] as String?;
+              final email = args?['email'] as String?;
+              if (token != null && email != null) {
+                return MaterialPageRoute(
+                  builder: (_) => ResetPasswordScreen(token: token, email: email),
                 );
               }
             }
