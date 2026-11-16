@@ -86,8 +86,8 @@ class RiderVehicleSection extends StatelessWidget {
           _ItemTile(
             icon: _vehicleIcon(p['vehicle_type'] as String?),
             title: 'Vehicle',
-            action: 'Edit vehicle',
-            actionIcon: Icons.edit_outlined,
+            action: 'Update OR/CR',
+            actionIcon: Icons.upload_file_outlined,
             onAction: () => _editVehicle(context, p),
             body: Row(children: [
               Expanded(child: Text(_cap(p['vehicle_type'] as String?), style: kLabelMd.copyWith(color: kTextPrimary))),
@@ -122,7 +122,7 @@ class RiderVehicleSection extends StatelessWidget {
           Text('Documents', style: kHeadingSm.copyWith(color: kTextPrimary)),
           const SizedBox(height: kSpace10),
           _document(context, "Driver's license", docs['driver_license']),
-          _document(context, 'Vehicle OR/CR', docs['or_cr']),
+          _document(context, 'OR/CR', docs['or_cr']),
         ]),
       ),
     ]);
@@ -495,7 +495,8 @@ class _EditVehicleSheetState extends State<_EditVehicleSheet> {
 
   String get _newPlate => _plate.text.replaceAll(' ', '').trim().toUpperCase();
   bool get _plateChanged => _newPlate.isNotEmpty && _newPlate != _current;
-  bool get _canSave => !_saving && (_plateChanged || _orCr != null);
+  // A vehicle change always needs a photo of the latest OR/CR (it proves the plate number)
+  bool get _canSave => !_saving && _orCr != null;
 
   @override
   void initState() {
@@ -525,8 +526,8 @@ class _EditVehicleSheetState extends State<_EditVehicleSheet> {
     final type = widget.profile['vehicle_type'] as String?;
     return _SheetFrame(
       icon: _vehicleIcon(type),
-      title: 'Edit vehicle',
-      subtitle: 'Update your plate number or upload a newer OR/CR.',
+      title: 'Update OR/CR',
+      subtitle: 'Upload a photo of your latest OR/CR. Change the plate number too if it changed.',
       footer: _footer(context, saveLabel: 'Save changes', saving: _saving, onSave: _canSave ? _save : null, error: _error),
       children: [
         // Live preview of the plate
@@ -571,13 +572,24 @@ class _EditVehicleSheetState extends State<_EditVehicleSheet> {
         ),
         const SizedBox(height: kSpace20),
 
-        _sectionLabel('Official Receipt / Certificate of Registration', trailing: 'Optional'),
+        _sectionLabel('Official Receipt / Certificate of Registration', trailing: 'Required'),
         DocumentPicker(
           label: 'Upload your latest OR/CR',
           file: _orCr,
           onPicked: (f) => setState(() { _orCr = f; _error = null; }),
           onRemove: () => setState(() => _orCr = null),
         ),
+        if (_orCr == null)
+          Padding(
+            key: const Key('orCrRequired'),
+            padding: const EdgeInsets.only(top: kSpace6),
+            child: Text(
+              _plateChanged
+                  ? 'Add a photo of your OR/CR showing the new plate to save.'
+                  : 'Add a photo of your latest OR/CR to save.',
+              style: kBodySm.copyWith(color: kActionDestructive),
+            ),
+          ),
         const SizedBox(height: kSpace16),
         _note(Icons.verified_user_outlined,
             'Your logistics company re-verifies vehicle changes. You can keep working while they review.'),

@@ -21,6 +21,7 @@ import 'package:taptap_go/screens/courier/rider_job_widgets.dart';
 import 'package:taptap_go/screens/courier/rider_notifications_screen.dart';
 import 'package:taptap_go/screens/courier/rider_profile_widgets.dart';
 import 'package:taptap_go/screens/courier/waybill_scanner_screen.dart';
+import 'package:taptap_go/widgets/bh_primary_button.dart';
 
 /// Rider Modules (R1-R7) screens against a fake API (the real API is covered by the
 /// Laravel RiderModulesTest).
@@ -381,11 +382,25 @@ void main() {
       }
       expect(find.text('Open'), findsNWidgets(2));
 
-      await tester.tap(find.text('Edit vehicle'));
+      expect(find.text('Edit vehicle'), findsNothing);
+      await tester.tap(find.text('Update OR/CR'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('plateField')), findsOneWidget);
       expect(find.text('Take photo'), findsOneWidget);
       expect(find.text('Choose file'), findsOneWidget);
+
+      // The OR/CR photo is required: without it, even a new plate cannot be saved
+      expect(find.text('Required'), findsOneWidget);
+      expect(find.text('Optional'), findsNothing);
+      BhPrimaryButton save() => tester.widget<BhPrimaryButton>(find.widgetWithText(BhPrimaryButton, 'Save changes'));
+      expect(save().onPressed, isNull);
+      expect(find.text('Add a photo of your latest OR/CR to save.'), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('plateField')), 'NEW456');
+      await tester.pumpAndSettle();
+      expect(save().onPressed, isNull);
+      expect(find.text('Add a photo of your OR/CR showing the new plate to save.'), findsOneWidget);
+      expect(api.requests.where((r) => r.url.path.endsWith('/profile/vehicle')), isEmpty);
     }, () => api.client);
   });
 
