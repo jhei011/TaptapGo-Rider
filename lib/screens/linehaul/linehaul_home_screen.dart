@@ -6,6 +6,7 @@ import '../../core/theme/app_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/bh_app_bar.dart';
 import '../courier/rider_job_widgets.dart' show cardDecoration;
+import 'linehaul_nbi.dart';
 import 'linehaul_notifications_screen.dart';
 import 'linehaul_trips_screen.dart';
 import '../../widgets/teal_pattern.dart';
@@ -133,6 +134,11 @@ class LinehaulHomeScreenState extends State<LinehaulHomeScreen> with WidgetsBind
           else ...[
             Reveal(child: _banner(home)),
             const SizedBox(height: kSpace12),
+            // No NBI on file, or waiting for the company to verify it: no trips until then
+            if (home['nbi_missing'] == true || home['nbi_unverified'] == true) ...[
+              LinehaulNbiCard(home: home, onSaved: _load),
+              const SizedBox(height: kSpace12),
+            ],
             Reveal(index: 1, child: _tripsSection()),
             const SizedBox(height: kSpace12),
             Reveal(index: 2, child: _details(home)),

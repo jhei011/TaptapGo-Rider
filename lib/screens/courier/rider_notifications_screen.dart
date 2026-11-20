@@ -175,6 +175,7 @@ class _NotificationTile extends StatelessWidget {
             kStatusFailedBg
           ),
         'expired' => (Icons.timer_off_outlined, kStatusPendingFg, kStatusPendingBg),
+        'nbi_verified' => (Icons.verified_user_outlined, kBrand700, kBrand50),
         _ => (Icons.notifications_none, kBrand700, kBrand50),
       };
 }

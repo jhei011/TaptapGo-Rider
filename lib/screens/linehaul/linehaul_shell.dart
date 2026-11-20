@@ -49,7 +49,12 @@ class _LinehaulShellState extends State<LinehaulShell> {
       _openTappedPush();
       // A push while the app is open: the new or finished trip shows right away
       _pushes = PushService.received.listen((m) {
-        if (m.tap?.type != 'trip') return;
+        // Not about a trip (e.g. "NBI clearance verified"): Home shows the new state
+        if (m.tap == null) {
+          _homeKey.currentState?.reload();
+          return;
+        }
+        if (m.tap!.type != 'trip') return;
         _homeKey.currentState?.reload();
         _tripsKey.currentState?.reload();
         _historyKey.currentState?.reload();

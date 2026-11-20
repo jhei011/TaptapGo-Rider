@@ -132,4 +132,60 @@ void main() {
           }));
     }
   });
+
+  // NBI clearance, like riders: no trips until it is on file and verified by the logistics company
+  Future<void> pumpWithNbi(WidgetTester tester, {required bool missing, required bool waiting}) async {
+    final withNbi = Map<String, Object?>.from(home)
+      ..['nbi_missing'] = missing
+      ..['nbi_unverified'] = waiting;
+    await tester.pumpWidget(ChangeNotifierProvider(
+      create: (_) => AuthProvider(),
+      child: MaterialApp(theme: AppTheme.light, home: LinehaulHomeScreen(key: UniqueKey())),
+    ));
+    await tester.pumpAndSettle();
+    expect(withNbi, isNotEmpty);
+  }
+
+  MockClient nbiApi(Map<String, Object?> homeBody) => MockClient((request) async {
+        final key = '${request.method} ${request.url.path.replaceFirst('/api', '')}';
+        final body = key == 'GET /linehaul/home' ? homeBody : key == 'GET /linehaul/trips' ? <Object>[] : null;
+        return body == null
+            ? http.Response(jsonEncode({'message': 'Forbidden'}), 403)
+            : http.Response.bytes(utf8.encode(jsonEncode(body)), 200, headers: {'content-type': 'application/json; charset=utf-8'});
+      });
+
+  testWidgets('no NBI on file: Home asks for it; the upload sheet needs a file before Save', (tester) async {
+    final body = Map<String, Object?>.from(home)..['nbi_missing'] = true..['nbi_unverified'] = false;
+    await http.runWithClient(() async {
+      await pumpWithNbi(tester, missing: true, waiting: false);
+      expect(find.byKey(const Key('linehaulNbiMissing')), findsOneWidget);
+      expect(find.text('NBI clearance needed'), findsOneWidget);
+
+      await tester.ensureVisible(find.byKey(const Key('linehaulNbiUpload')));
+      await tester.tap(find.byKey(const Key('linehaulNbiUpload')));
+      await tester.pumpAndSettle();
+      expect(find.text('Upload your NBI clearance'), findsOneWidget);
+      // Nothing picked yet: Save is off
+      expect(tester.widget<ElevatedButton>(find.byKey(const Key('linehaulNbiSave'))).onPressed, isNull);
+    }, () => nbiApi(body));
+  });
+
+  testWidgets('NBI uploaded, not verified yet: Home says it is waiting', (tester) async {
+    final body = Map<String, Object?>.from(home)..['nbi_missing'] = false..['nbi_unverified'] = true;
+    await http.runWithClient(() async {
+      await pumpWithNbi(tester, missing: false, waiting: true);
+      expect(find.byKey(const Key('linehaulNbiWaiting')), findsOneWidget);
+      expect(find.text('NBI clearance waiting for verification'), findsOneWidget);
+      expect(find.byKey(const Key('linehaulNbiMissing')), findsNothing);
+    }, () => nbiApi(body));
+  });
+
+  testWidgets('verified NBI: no NBI card on Home', (tester) async {
+    final body = Map<String, Object?>.from(home)..['nbi_missing'] = false..['nbi_unverified'] = false;
+    await http.runWithClient(() async {
+      await pumpWithNbi(tester, missing: false, waiting: false);
+      expect(find.byKey(const Key('linehaulNbiMissing')), findsNothing);
+      expect(find.byKey(const Key('linehaulNbiWaiting')), findsNothing);
+    }, () => nbiApi(body));
+  });
 }

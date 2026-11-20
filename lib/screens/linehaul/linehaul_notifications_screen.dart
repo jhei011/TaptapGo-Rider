@@ -185,6 +185,7 @@ class _LinehaulNotificationsScreenState extends State<LinehaulNotificationsScree
       'assigned' => (Icons.local_shipping_outlined, kBrand700, kBrand50),
       'cancelled' => (Icons.cancel_outlined, kStatusFailedFg, kStatusFailedBg),
       'completed' => (Icons.check_circle_outline, kBrand700, kBrand50),
+      'nbi_verified' => (Icons.verified_user_outlined, kBrand700, kBrand50),
       _ => (Icons.notifications_none, kBrand700, kBrand50),
     };
     return Material(

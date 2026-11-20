@@ -247,7 +247,7 @@ class _EditNbiSheetState extends State<_EditNbiSheet> {
               child: Text('Add a photo of your NBI clearance to save.', style: kBodySm.copyWith(color: kActionDestructive)),
             ),
           const SizedBox(height: kSpace16),
-          _note(Icons.verified_user_outlined, 'Your logistics company checks it. You can take jobs as soon as it is saved.'),
+          _note(Icons.verified_user_outlined, 'Your logistics company checks it. You can take jobs once they verify it.'),
         ],
       );
 }

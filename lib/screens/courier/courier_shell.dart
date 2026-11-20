@@ -47,7 +47,8 @@ class _CourierShellState extends State<CourierShell> {
       _openTappedPush();
       // A push while the app is open: the new job or offer shows without pulling to refresh
       _pushes = PushService.received.listen((m) {
-        if (m.tap?.type != 'job' || !mounted) return;
+        // A job push, or one about the rider (e.g. "NBI clearance verified", no job): refresh
+        if ((m.tap != null && m.tap!.type != 'job') || !mounted) return;
         final cp = context.read<CourierProvider>();
         cp.loadDashboard();
         cp.loadNotifications();
